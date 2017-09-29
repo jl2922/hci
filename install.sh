@@ -13,7 +13,7 @@ else
 	echo "Downloading OpenMPI Source"
   mkdir -p downloads
   cd downloads
-	wget https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.bz2 &> wget.log
+	wget -O openmpi-3.0.0.tar.bz2 https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.bz2 &> wget.log
 	tar xjf openmpi-3.0.0.tar.bz2
 	echo "Configuring and building OpenMPI"
 	cd openmpi-3.0.0
@@ -35,7 +35,7 @@ else
 	echo "Downloading Protocol Buffers"
   mkdir -p downloads
   cd downloads
-	wget https://github.com/google/protobuf/releases/download/v3.4.1/protobuf-cpp-3.4.1.tar.gz &> wget.log
+	wget -O protobuf-cpp-3.4.1.tar.gz https://github.com/google/protobuf/releases/download/v3.4.1/protobuf-cpp-3.4.1.tar.gz &> wget.log
 	tar xzf protobuf-cpp-3.4.1.tar.gz
 	echo "Configuring and building Protocol Buffers"
 	cd protobuf-3.4.1
@@ -57,7 +57,7 @@ else
 	echo "Downloading Boost"
   mkdir -p downloads
   cd downloads
-	wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
+	wget -O boost_1_65_1.tar.bz2 https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
 	tar xjf boost_1_65_1.tar.bz2
 	echo "Configuring and building Boost"
 	cd boost_1_65_1
@@ -85,7 +85,7 @@ else
 	echo "Downloading Lockless"
   mkdir -p downloads
   cd downloads
-	wget https://github.com/jl2922/lockless_allocator/archive/lockless-1.3.tar.gz &> wget.log
+	wget -O lockless-1.3.tar.gz https://github.com/jl2922/lockless_allocator/archive/lockless-1.3.tar.gz &> wget.log
 	tar xzf lockless-1.3.tar.gz
 	echo "Configuring and building Lockless"
 	cd lockless_allocator-lockless-1.3
@@ -105,7 +105,7 @@ if [ -f "gtest/googletest/include/gtest/gtest.h" ]; then
 	echo "Found Google Test"
 else
 	echo "Downloading Google Test"
-	wget https://github.com/google/googletest/archive/release-1.8.0.tar.gz &> wget.log
+	wget -O release-1.8.0.tar.gz https://github.com/google/googletest/archive/release-1.8.0.tar.gz &> wget.log
 	tar xzf release-1.8.0.tar.gz
 	rm release-1.8.0.tar.gz
 	mv googletest-release-1.8.0 gtest
