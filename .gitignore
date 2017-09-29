@@ -1,32 +1,24 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Build files.
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
 *.a
-*.lib
+*.x
+local.mk
+gtest/
 
-# Executables
-*.exe
-*.out
-*.app
+# Compiled protobuf classes.
+*.pb.h
+*.pb.cc
+*_pb2.py
+
+# Runtime files.
+runs/
+config.json
+*.log
+var_*.dat
+out_*.txt
+
+# OS and IDE files.
+.vscode/
+*.dSYM/
+__pycache__/
+hci_profile/
