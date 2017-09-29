@@ -4,6 +4,8 @@
 test -n $CC && unset CC
 test -n $CXX && unset CXX
 
+set -x
+
 # Install OpenMPI.
 if [ -f "$TOOLS_DIR/openmpi/bin/mpic++" ] && [ -f "$TOOLS_DIR/openmpi/bin/mpic++" ]; then
 	echo "Found cached OpenMPI"
