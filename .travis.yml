@@ -1,0 +1,24 @@
+language: cpp
+sudo: required
+dist: trusty
+compiler:
+  - gcc
+os:
+  - linux
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6 gcc-6 libstdc++-6-dev
+env:
+  - CXX_COMPILER=g++-6 C_COMPILER=gcc-6 TOOLS_DIR=$TRAVIS_BUILD_DIR/tools
+before_install:
+  - git submodule update --init --remote --recursive
+script: bash ./install.sh
+cache:
+  directories:
+    - tools/openmpi
+    - tools/protobuf
+    - tools/boost
+    - tools/lockless

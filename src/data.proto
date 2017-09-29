@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package data;
+
+message VariationResult {
+  double energy_hf = 1;
+  double energy_var = 2;
+  Wavefunction wf = 5;
+}
+
+message Wavefunction {
+  repeated Term terms = 1;
+}
+
+message Term {
+  double coef = 1;
+  Determinant det = 2;
+}
+
+message Determinant {
+  SpinDeterminant up = 1;
+  SpinDeterminant dn = 2;
+}
+
+message SpinDeterminant {
+  uint32 n_hf_elecs = 1;  // One redundant byte of HF level for a simpler logic.
+  repeated uint32 v_holes = 2;  // Vacanted (valence) holes.
+  repeated uint32 c_elecs = 3;  // Conduction electrons.
+}
