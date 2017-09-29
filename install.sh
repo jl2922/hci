@@ -57,7 +57,7 @@ else
 	echo "Downloading Boost"
   mkdir -p downloads
   cd downloads
-	wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2 &> wget.log
+	wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
 	tar xjf boost_1_65_1.tar.bz2
 	echo "Configuring and building Boost"
 	cd boost_1_65_1

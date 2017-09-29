@@ -5,6 +5,8 @@
 
 class HEGController {
  public:
+  virtual ~HEGController() = default;
+
   virtual void run() = 0;
 
   static HEGController* new_instance(Session* const session);
