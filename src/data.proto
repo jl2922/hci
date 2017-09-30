@@ -23,7 +23,7 @@ message Determinant {
 }
 
 message SpinDeterminant {
-  uint32 n_hf_elecs = 1;  // One redundant byte of HF level for a simpler logic.
-  repeated uint32 v_holes = 2;  // Vacanted (valence) holes.
-  repeated uint32 c_elecs = 3;  // Conduction electrons.
+  int32 n_hf_elecs = 1;  // One redundant byte of HF level for a simpler logic.
+  repeated int32 v_holes = 2;  // Vacanted (valence) holes.
+  repeated int32 c_elecs = 3;  // Conduction electrons.
 }

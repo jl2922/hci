@@ -16,8 +16,6 @@ class Timer {
   virtual void checkpoint(const std::string& msg) = 0;
 
   virtual void end() = 0;
-
-  static Timer* new_instance(Parallel* const parallel);
 };
 
 #endif

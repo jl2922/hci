@@ -2,6 +2,8 @@
 #define HEG_CONTROLLER_H_
 
 #include "../session.h"
+#include "../solver/solver.h"
+#include "heg_system.h"
 
 class HEGController {
  public:
