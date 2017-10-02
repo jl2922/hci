@@ -16,8 +16,6 @@ class HEGController {
   // For each rcut_var and eps_var:
   //   Run perturbation.
   virtual void run() = 0;
-
-  static HEGController* new_instance(Session* const session);
 };
 
 #endif

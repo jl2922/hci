@@ -16,7 +16,7 @@ env:
 before_install:
   - which g++-6
   - git submodule update --init --remote --recursive
-script: bash ./install.sh
+script: bash ./ci.sh
 cache:
   directories:
     - tools/openmpi

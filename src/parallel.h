@@ -1,7 +1,6 @@
 #ifndef PARALLEL_H_
 #define PARALLEL_H_
 
-#include <cstddef>
 #include <vector>
 
 class Parallel {
@@ -23,8 +22,6 @@ class Parallel {
   virtual void reduce_to_sum(double& value) = 0;
 
   virtual void reduce_to_sum(std::vector<double>& value) = 0;
-
-  static Parallel* new_instance(int argc, char** argv);
 };
 
 #endif
