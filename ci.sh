@@ -65,9 +65,7 @@ else
   ./bootstrap.sh &> bootstrap.log
   echo 'libraries =  --with-mpi --with-serialization ;' >> project-config.jam
   echo 'using mpi : mpic++ ;' >> project-config.jam
-	if [ -n "$CONTINUOUS_INTEGRATION" ]; then
-		echo 'using gcc : 6 ;' >> project-config.jam
-	fi
+	echo 'using gcc : 6 ;' >> project-config.jam
 	./b2 -j8 --prefix=$TOOLS_DIR/boost install &> install.log
 	echo "Completed"
 	echo
@@ -113,10 +111,7 @@ else
 	echo
 fi
 
+cp ci.mk local.mk
 make proto
-
-if [ -n "$CONTINUOUS_INTEGRATION" ]; then
-  cp ci.mk local.mk
-	make -j
-	make all_tests -j
-fi
+make -j
+make all_tests -j

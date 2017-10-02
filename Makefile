@@ -2,25 +2,29 @@
 CXX := mpic++
 CXX_WARNING_OPTIONS := -Wall -Wextra -Wno-expansion-to-defined -Wno-int-in-bool-context
 CXXFLAGS := -std=c++17 -O3 -fopenmp -march='native' -mtune='native' $(CXX_WARNING_OPTIONS)
-LDLIBS := -pthread -lboost_mpi -lboost_serialization -lprotobuf -lpthread -lllalloc
+LDLIBS := -pthread -lboost_mpi -lboost_serialization -lprotobuf -lpthread
 SRC_DIR := src
 OBJ_DIR := build
 EXE := hci.x
 TEST_EXE := $(OBJ_DIR)/hci_test.x
 
 # Libraries.
-TOOLS_DIR := $(HOME)/tools
-EIGEN_DIR := $(TOOLS_DIR)/eigen
-BOOST_DIR := $(TOOLS_DIR)/boost
-PROTOBUF_DIR := $(TOOLS_DIR)/protobuf
-LOCKLESS_DIR := $(TOOLS_DIR)/lockless
-CXXFLAGS := $(CXXFLAGS) -I $(EIGEN_DIR)/include -I $(BOOST_DIR)/include -I $(PROTOBUF_DIR)/include
-LDLIBS := -L $(BOOST_DIR)/lib -L $(LOCKLESS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS)
+UNAME := $(shell uname)
+HOSTNAME := $(shell hostname)
+ifeq ($(UNAME), Linux)
+	TOOLS_DIR := $(HOME)/tools
+	EIGEN_DIR := $(TOOLS_DIR)/eigen
+	BOOST_DIR := $(TOOLS_DIR)/boost
+	PROTOBUF_DIR := $(TOOLS_DIR)/protobuf
+	LOCKLESS_DIR := $(TOOLS_DIR)/lockless
+	CXXFLAGS := $(CXXFLAGS) -I $(EIGEN_DIR)/include -I $(BOOST_DIR)/include -I $(PROTOBUF_DIR)/include
+	LDLIBS := -L $(BOOST_DIR)/lib -L $(LOCKLESS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS) -lllalloc
+endif
 
 # Load Makefile.config if exists.
 LOCAL_MAKEFILE := local.mk
 ifneq ($(wildcard $(LOCAL_MAKEFILE)),)
-include $(LOCAL_MAKEFILE)
+	include $(LOCAL_MAKEFILE)
 endif
 
 # Sources and intermediate objects.
@@ -60,7 +64,6 @@ clean:
 	rm -rf $(OBJ_DIR)
 	rm -f ./$(EXE)
 	rm -f ./$(TEST_EXE)
-	rm -f $(PROTO_COMPILED)
 
 # Main program.
 
