@@ -66,6 +66,8 @@ void HEGControllerImpl::run_all_variations() {
       }
       const double eps_var = eps_vars[j];
       timer->start(str(boost::format("eps_var: %#.4g") % eps_var));
+      solver->setup_hf();
+      solver->variation(eps_var);
       timer->end();  // eps_var.
     }
     timer->end();  // rcut_var.

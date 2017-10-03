@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "../array_math.h"
 #include "../injector.h"
+#include "../solver/spin_det_util.h"
 #include "k_points_util.h"
 
 class HEGSystemImpl : public HEGSystem {
@@ -49,7 +50,7 @@ class HEGSystemImpl : public HEGSystem {
 
   std::unordered_map<
       std::array<int8_t, 3>,
-      size_t,
+      int,
       boost::hash<std::array<int8_t, 3>>>
       k_lut;
 
@@ -96,7 +97,7 @@ void HEGSystemImpl::setup(const double rcut) {
   const int n_k_points = k_points.size();
   if (verbose) printf("Number of orbitals: %'d\n", n_k_points * 2);
   k_lut.clear();
-  for (size_t i = 0; i < k_points.size(); i++) k_lut[k_points[i]] = i;
+  for (int i = 0; i < n_k_points; i++) k_lut[k_points[i]] = i;
 
   // Setup HCI queue.
   setup_hci_queue();
@@ -108,14 +109,114 @@ void HEGSystemImpl::setup(const double rcut) {
 double HEGSystemImpl::hamiltonian(
     const data::Determinant* const det_pq,
     const data::Determinant* const det_rs) const {
-  return 0.0;
+  return energy_hf;
 };
 
 void HEGSystemImpl::find_connected_dets(
     const data::Determinant* const det,
     const double eps,
     const std::function<void(const data::Determinant* const)>&
-        connected_det_handler) const {};
+        connected_det_handler) const {
+  if (max_abs_H < eps) return;
+  data::Determinant new_det(*det);
+
+  const int dn_offset = k_points.size();
+
+  const auto& is_occupied = [&](
+      const data::Determinant* const target_det, const int orb) {
+    if (orb < dn_offset) {
+      return SpinDetUtil::is_occupied(target_det->up(), orb);
+    } else {
+      return SpinDetUtil::is_occupied(target_det->dn(), orb - dn_offset);
+    }
+  };
+
+  const auto& set_occupation = [&](
+      data::Determinant* const target_det, const int orb, const bool occ) {
+    if (orb < dn_offset) {
+      SpinDetUtil::set_occupation(target_det->mutable_up(), orb, occ);
+    } else {
+      SpinDetUtil::set_occupation(
+          target_det->mutable_dn(), orb - dn_offset, occ);
+    }
+  };
+
+  const auto& pq_handler = [&](const int p, const int q) {
+    int pp = p, qq = q;
+    if (p >= dn_offset && q >= dn_offset) {
+      pp -= dn_offset;
+      qq -= dn_offset;
+    } else if (p < dn_offset && q >= dn_offset && p > q - dn_offset) {
+      pp = q - dn_offset;
+      qq = p + dn_offset;
+    }
+    bool same_spin = false;
+    const std::vector<std::pair<std::array<int8_t, 3>, double>>* items_ptr;
+    if (pp < dn_offset && qq < dn_offset) {
+      same_spin = true;
+      const auto& diff_pq = k_points[qq] - k_points[pp];
+      items_ptr = &(same_spin_hci_queue.find(diff_pq)->second);
+    } else {
+      items_ptr = &(opposite_spin_hci_queue);
+    }
+    const auto& items = *items_ptr;
+    int qs_offset = 0;
+    if (!same_spin) qs_offset = dn_offset;
+
+    for (const auto& item : items) {
+      if (item.second < eps) break;
+      const auto& diff_pr = item.first;
+      const auto& it_r = k_lut.find(diff_pr + k_points[pp]);
+      if (it_r == k_lut.end()) continue;
+      int r = it_r->second;
+      const auto& it_s =
+          k_lut.find(k_points[pp] + k_points[qq - qs_offset] - k_points[r]);
+      if (it_s == k_lut.end()) continue;
+      int s = it_s->second;
+      if (same_spin && s < r) continue;
+      s += qs_offset;
+      if (p >= dn_offset && q >= dn_offset) {
+        r += dn_offset;
+        s += dn_offset;
+      } else if (p < dn_offset && q >= dn_offset && p > q - dn_offset) {
+        const int tmp = s;
+        s = r + dn_offset;
+        r = tmp - dn_offset;
+      }
+
+      if (!is_occupied(det, r) && !is_occupied(det, s)) {
+        set_occupation(&new_det, p, false);
+        set_occupation(&new_det, q, false);
+        set_occupation(&new_det, r, true);
+        set_occupation(&new_det, s, true);
+        connected_det_handler(&new_det);
+        set_occupation(&new_det, p, true);
+        set_occupation(&new_det, q, true);
+        set_occupation(&new_det, r, false);
+        set_occupation(&new_det, s, false);
+      }
+    }
+  };
+
+  const auto& occ_up = SpinDetUtil::get_occupied_orbitals(det->up());
+  const auto& occ_dn = SpinDetUtil::get_occupied_orbitals(det->dn());
+
+  for (int i = 0; i < n_up; i++) {
+    for (int j = i + 1; j < n_up; j++) {
+      pq_handler(occ_up[i], occ_up[j]);
+    }
+  }
+  for (int i = 0; i < n_dn; i++) {
+    for (int j = i + 1; j < n_dn; j++) {
+      pq_handler(occ_dn[i] + dn_offset, occ_dn[j] + dn_offset);
+    }
+  }
+  for (int i = 0; i < n_up; i++) {
+    for (int j = 0; j < n_dn; j++) {
+      pq_handler(occ_up[i], occ_dn[j] + dn_offset);
+    }
+  }
+};
 
 void HEGSystemImpl::setup_hci_queue() {
   same_spin_hci_queue.clear();
