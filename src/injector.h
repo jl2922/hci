@@ -29,10 +29,10 @@ class Injector {
   static Solver* new_solver(
       Session* const session,
       Connections* const connections,
-      AbstractSystem* const system);
+      AbstractSystem* const abstract_system);
 
   static Connections* new_connections(
-      Session* const session, AbstractSystem* const system);
+      Session* const session, AbstractSystem* const abstract_system);
 
   static HEGController* new_heg_controller(Session* const session);
 
