@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <utility>
 #include "../injector.h"
+#include "davidson_util.h"
 
 #define ENERGY_FORMAT "%.12f"
 
@@ -18,6 +19,9 @@ class SolverImpl : public Solver {
   void setup_hf() override;
 
   void variation(const double eps_var) override;
+
+  std::vector<double> apply_hamiltonian(
+      const std::vector<double>& vec) override;
 
   void perturbation(const double eps_pt) override;
 
@@ -96,7 +100,6 @@ void SolverImpl::variation(const double eps_var) {
   bool converged = false;
   int iteration = 0;
   int n_new_dets = 0;
-  double energy_var_new = 0.0;
   const auto& connected_det_handler =
       [&](const data::Determinant* const connected_det) {
         std::string det_code;
@@ -110,8 +113,12 @@ void SolverImpl::variation(const double eps_var) {
           n_new_dets++;
         }
       };
+  const auto& apply_hamiltonian_func =
+      std::bind(&SolverImpl::apply_hamiltonian, this, std::placeholders::_1);
   while (!converged) {
     timer->start("Variation: " + std::to_string(iteration));
+
+    // Find new dets.
     n_new_dets = 0;
     const int n_old_dets = wf->terms_size();
     for (int i = 0; i < n_old_dets; i++) {
@@ -131,16 +138,41 @@ void SolverImpl::variation(const double eps_var) {
     prev_coefs.resize(n_total_dets);
     for (int i = 0; i < n_total_dets; i++) prev_coefs[i] = wf->terms(i).coef();
 
-    // Diagonalization.
+    // Diagonalize.
+    std::vector<double> diagonal(n_total_dets, 0.0);
+    for (int i = 0; i < n_total_dets; i++) {
+      const auto& det_i = wf->terms(i).det();
+      diagonal[i] = abstract_system->hamiltonian(&det_i, &det_i);
+    }
+    const auto& diagonalization_result = DavidsonUtil::diagonalize(
+        prev_coefs, diagonal, apply_hamiltonian_func, 10, verbose);
+    const double energy_var_new = diagonalization_result.first;
+    const auto& new_coefs = diagonalization_result.second;
+    for (int i = 0; i < n_total_dets; i++) {
+      wf->mutable_terms(i)->set_coef(new_coefs[i]);
+    }
 
-    timer->end();
+    timer->end();  // iteration.
 
+    // Determine convergence.
     if (std::abs(energy_var_new - energy_var) < 1.0e-6) {
       converged = true;
     }
+
     energy_var = energy_var_new;
     iteration++;
+
+    if (verbose) {
+      const double energy_corr = energy_var - energy_hf;
+      printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var_new);
+      printf("Correlation energy: " ENERGY_FORMAT " Ha\n", energy_corr);
+    }
   }
+};
+
+std::vector<double> SolverImpl::apply_hamiltonian(
+    const std::vector<double>& vec) {
+  return vec;
 };
 
 void SolverImpl::perturbation(const double eps_pt){};

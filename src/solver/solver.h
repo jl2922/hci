@@ -12,6 +12,9 @@ class Solver {
 
   virtual void variation(const double eps_var) = 0;
 
+  virtual std::vector<double> apply_hamiltonian(
+      const std::vector<double>& vec) = 0;
+
   virtual void perturbation(const double eps_pt) = 0;
 };
 

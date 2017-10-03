@@ -68,6 +68,8 @@ class HEGSystemImpl : public HEGSystem {
   void setup_hci_queue();
 
   void evaluate_energy_hf();
+
+  double hamiltonian_diagonal(const data::Determinant* const det) const;
 };
 
 HEGSystemImpl::HEGSystemImpl(Session* const session) : session(session) {
@@ -109,8 +111,64 @@ void HEGSystemImpl::setup(const double rcut) {
 double HEGSystemImpl::hamiltonian(
     const data::Determinant* const det_pq,
     const data::Determinant* const det_rs) const {
-  return energy_hf;
+  if (det_pq == det_rs) {
+    return hamiltonian_diagonal(det_pq);
+  } else {
+    return energy_hf;
+  }
 };
+
+double HEGSystemImpl::hamiltonian_diagonal(
+    const data::Determinant* const det) const {
+  double H = energy_hf;
+
+  const auto& spin_correct = [&](const data::SpinDeterminant& spin_det) {
+    const int n_hf_elecs = spin_det.n_hf_elecs();
+    const int n_v_holes = spin_det.v_holes_size();
+    const int n_c_elecs = spin_det.c_elecs_size();
+
+    // One electron operators correction.
+    for (const int p : spin_det.v_holes())
+      H -= squared_norm(k_points[p] * k_unit) * 0.5;
+    for (const int p : spin_det.c_elecs())
+      H += squared_norm(k_points[p] * k_unit) * 0.5;
+
+    // Two electron operators correction.
+    std::vector<bool> hf_orbs(n_hf_elecs, true);
+    for (const int p : spin_det.v_holes()) hf_orbs[p] = false;
+    for (int p = 0; p < n_hf_elecs; p++) {
+      if (!hf_orbs[p]) continue;
+      const auto& k_p = k_points[p];
+      for (const int q : spin_det.v_holes()) {
+        const auto& k_q = k_points[q];
+        H += H_unit / squared_norm(k_p - k_q);
+      }
+      for (const int q : spin_det.c_elecs()) {
+        const auto& k_q = k_points[q];
+        H -= H_unit / squared_norm(k_p - k_q);
+      }
+    }
+    for (int ip = 0; ip < n_v_holes; ip++) {
+      const auto& k_p = k_points[spin_det.v_holes(ip)];
+      for (int iq = ip + 1; iq < n_v_holes; iq++) {
+        const auto& k_q = k_points[spin_det.v_holes(iq)];
+        H += H_unit / squared_norm(k_p - k_q);
+      }
+    }
+    for (int ip = 0; ip < n_c_elecs; ip++) {
+      const auto& k_p = k_points[spin_det.c_elecs(ip)];
+      for (int iq = ip + 1; iq < n_c_elecs; iq++) {
+        const auto& k_q = k_points[spin_det.c_elecs(iq)];
+        H -= H_unit / squared_norm(k_p - k_q);
+      }
+    }
+  };
+
+  spin_correct(det->up());
+  spin_correct(det->dn());
+
+  return H;
+}
 
 void HEGSystemImpl::find_connected_dets(
     const data::Determinant* const det,
