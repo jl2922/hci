@@ -1,5 +1,6 @@
 #include "solver.h"
 
+#include <cmath>
 #include <string>
 #include <unordered_set>
 #include <utility>
