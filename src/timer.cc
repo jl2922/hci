@@ -62,8 +62,8 @@ void TimerImpl::init() {
   if (verbose) {
     const time_t start_time = std::chrono::system_clock::to_time_t(now);
     printf("\nStart time: %s", asctime(localtime(&start_time)));
-    printf("Timing format: " ANSI_COLOR_YELLOW
-           "[DIFF/SECTION/TOTAL]" ANSI_COLOR_RESET "\n");
+    printf("Format: " ANSI_COLOR_YELLOW "[DIFF/SECTION/TOTAL]" ANSI_COLOR_RESET
+           "\n");
   }
   barrier();
 }

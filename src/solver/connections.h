@@ -1,6 +1,8 @@
 #ifndef CONNECTIONS_H_
 #define CONNECTIONS_H_
 
+#include <vector>
+
 class Connections {
  public:
   virtual ~Connections() = default;

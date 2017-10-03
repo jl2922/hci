@@ -10,7 +10,7 @@ class KPointsUtil {
 
   static std::vector<std::array<int8_t, 3>> generate_k_points(const double);
 
-  static std::vector<std::array<int8_t, 3>> get_k_points_diffs(
+  static std::vector<std::array<int8_t, 3>> get_k_diffs(
       const std::vector<std::array<int8_t, 3>>&);
 };
 
