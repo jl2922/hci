@@ -12,6 +12,10 @@ class Solver {
 
   virtual void variation(const double eps_var) = 0;
 
+  virtual void save_variation_result(const std::string& filename) = 0;
+
+  virtual bool load_variation_result(const std::string& filename) = 0;
+
   virtual std::vector<double> apply_hamiltonian(
       const std::vector<double>& vec) = 0;
 

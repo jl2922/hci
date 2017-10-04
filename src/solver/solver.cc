@@ -1,6 +1,7 @@
 #include "solver.h"
 
 #include <cmath>
+#include <fstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -20,6 +21,10 @@ class SolverImpl : public Solver {
   void setup_hf() override;
 
   void variation(const double eps_var) override;
+
+  void save_variation_result(const std::string& filename) override;
+
+  bool load_variation_result(const std::string& filename) override;
 
   std::vector<double> apply_hamiltonian(
       const std::vector<double>& vec) override;
@@ -44,6 +49,8 @@ class SolverImpl : public Solver {
   const std::unique_ptr<Connections> connections;
 
   AbstractSystem* const abstract_system;
+
+  void print_var_result() const;
 };
 
 SolverImpl::SolverImpl(
@@ -162,15 +169,48 @@ void SolverImpl::variation(const double eps_var) {
     energy_var = energy_var_new;
     iteration++;
 
-    if (verbose) {
-      const double energy_corr = energy_var - energy_hf;
-      printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var_new);
-      printf("Correlation energy: " ENERGY_FORMAT " Ha\n", energy_corr);
-    }
-
     timer->end();  // iteration.
   }
 };
+
+void SolverImpl::save_variation_result(const std::string& filename) {
+  std::fstream var_file(
+      filename, std::ios::out | std::ios::trunc | std::ios::binary);
+  data::VariationResult res;
+  res.set_energy_hf(energy_hf);
+  res.set_energy_var(energy_var);
+  res.set_allocated_wf(abstract_system->wf.release());
+  res.SerializeToOstream(&var_file);
+  var_file.close();
+  abstract_system->wf.reset(res.release_wf());
+  if (verbose) {
+    print_var_result();
+    printf("Saved to: %s\n", filename.c_str());
+  }
+}
+
+bool SolverImpl::load_variation_result(const std::string& filename) {
+  std::fstream var_file(filename, std::ios::in | std::ios::binary);
+  data::VariationResult res;
+  if (!res.ParseFromIstream(&var_file)) {
+    return false;
+  }
+  var_file.close();
+  energy_hf = res.energy_hf();
+  energy_var = res.energy_var();
+  abstract_system->wf.reset(res.release_wf());
+  if (verbose) {
+    printf("Loaded from: %s\n", filename.c_str());
+    print_var_result();
+  }
+  return true;
+}
+
+void SolverImpl::print_var_result() const {
+  printf("Number of dets: %'d\n", abstract_system->wf->terms_size());
+  printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var);
+  printf("Correlation energy: " ENERGY_FORMAT " Ha\n", energy_var - energy_hf);
+}
 
 std::vector<double> SolverImpl::apply_hamiltonian(
     const std::vector<double>& vec) {

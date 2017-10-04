@@ -21,6 +21,8 @@ class HEGControllerImpl : public HEGController {
 
   Session* const session;
 
+  bool is_master = false;
+
   const std::unique_ptr<Solver> solver;
 
   const std::unique_ptr<HEGSystem> heg_system;
@@ -32,7 +34,9 @@ class HEGControllerImpl : public HEGController {
 
 HEGControllerImpl::HEGControllerImpl(
     Session* const session, Solver* const solver, HEGSystem* const heg_system)
-    : session(session), solver(solver), heg_system(heg_system) {}
+    : session(session), solver(solver), heg_system(heg_system) {
+  is_master = session->get_parallel()->is_master();
+}
 
 void HEGControllerImpl::run() {
   run_all_variations();
@@ -56,6 +60,7 @@ void HEGControllerImpl::run_all_variations() {
 
     timer->start("setup");
     heg_system->setup(rcut_var);
+    solver->setup_hf();
     timer->end();  // setup.
 
     for (int j = 0; j < n_eps_vars; j++) {
@@ -66,8 +71,12 @@ void HEGControllerImpl::run_all_variations() {
       }
       const double eps_var = eps_vars[j];
       timer->start(str(boost::format("eps_var: %#.4g") % eps_var));
-      solver->setup_hf();
-      solver->variation(eps_var);
+      const auto& filename =
+          str(boost::format("var_%#.4g_%#.4g.dat") % eps_var % rcut_var);
+      if (!solver->load_variation_result(filename)) {
+        solver->variation(eps_var);
+        if (is_master) solver->save_variation_result(filename);
+      }
       timer->end();  // eps_var.
     }
     timer->end();  // rcut_var.
