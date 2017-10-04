@@ -31,15 +31,15 @@ class ConnectionsImpl : public Connections {
 
   std::vector<std::vector<std::pair<int, double>>> cached_connections;
 
-  std::vector<int8_t> cache_status;
+  static constexpr uint8_t NOT_CACHED = 0;
 
-  static constexpr int8_t NOT_CACHED = -1;
+  static constexpr uint8_t CACHED = 1;
 
-  static constexpr int8_t CACHED = 1;
+  static constexpr uint8_t CACHE_OUTDATED = 2;
 
-  static constexpr int8_t CACHE_OUTDATED = 2;
+  static constexpr uint8_t CACHE_LIMIT_EXCEEDED = 3;
 
-  static constexpr int8_t CACHE_LIMIT_EXCEEDED = 4;
+  std::vector<uint8_t> cache_status;
 
   // alpha and beta strings, O(n_dets).
   std::unordered_map<std::string, std::pair<std::vector<int>, std::vector<int>>>
@@ -59,6 +59,11 @@ class ConnectionsImpl : public Connections {
 
   AbstractSystem* const abstract_system;
 };
+
+constexpr uint8_t ConnectionsImpl::NOT_CACHED;
+constexpr uint8_t ConnectionsImpl::CACHED;
+constexpr uint8_t ConnectionsImpl::CACHE_OUTDATED;
+constexpr uint8_t ConnectionsImpl::CACHE_LIMIT_EXCEEDED;
 
 ConnectionsImpl::ConnectionsImpl(
     Session* const session, AbstractSystem* const abstract_system)
