@@ -9,7 +9,7 @@ class Connections {
 
   virtual void update() = 0;
 
-  virtual std::vector<std::pair<int, double>> get_conections(const int i) = 0;
+  virtual std::vector<std::pair<int, double>> get_connections(const int i) = 0;
 };
 
 #endif

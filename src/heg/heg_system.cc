@@ -114,7 +114,78 @@ double HEGSystemImpl::hamiltonian(
   if (det_pq == det_rs) {
     return hamiltonian_diagonal(det_pq);
   } else {
-    return energy_hf;
+    const auto& eor_up = SpinDetUtil::get_eor(det_pq->up(), det_rs->up());
+    const int n_eor_up = eor_up.size();
+    if (n_eor_up > 4) return 0.0;
+    const auto& eor_dn = SpinDetUtil::get_eor(det_pq->dn(), det_rs->dn());
+    const int n_eor_dn = eor_dn.size();
+    if (n_eor_up == 0 && n_eor_dn == 0) return hamiltonian_diagonal(det_pq);
+    if (n_eor_up + n_eor_dn != 4) return 0.0;
+
+    // Obtain p, q, s.
+    bool k_p_set = false, k_r_set = false;
+    int orb_p = 0, orb_r = 0, orb_s = 0;
+    std::array<int8_t, 3> k_change;
+    k_change.fill(0);
+    for (const auto orb_i : eor_up) {
+      if (SpinDetUtil::is_occupied(det_pq->up(), orb_i)) {
+        k_change -= k_points[orb_i];
+        if (!k_p_set) {
+          orb_p = orb_i;
+          k_p_set = true;
+        }
+      } else {
+        k_change += k_points[orb_i];
+        if (!k_r_set) {
+          orb_r = orb_i;
+          k_r_set = true;
+        } else {
+          orb_s = orb_i;
+        }
+      }
+    }
+    for (const auto orb_i : eor_dn) {
+      if (SpinDetUtil::is_occupied(det_pq->dn(), orb_i)) {
+        k_change -= k_points[orb_i];
+        if (!k_p_set) {
+          orb_p = orb_i;
+          k_p_set = true;
+        }
+      } else {
+        k_change += k_points[orb_i];
+        if (!k_r_set) {
+          orb_r = orb_i;
+          k_r_set = true;
+        } else {
+          orb_s = orb_i;
+        }
+      }
+    }
+
+    // Check for momentum conservation.
+    if (k_change != 0) return 0.0;
+
+    double H = H_unit / squared_norm(k_points[orb_p] - k_points[orb_r]);
+    if (n_eor_up != 2) {
+      H -= H_unit / squared_norm(k_points[orb_p] - k_points[orb_s]);
+    }
+
+    const auto& get_gamma_exp = [&](
+        const data::SpinDeterminant& spin_det, const std::vector<int>& eor) {
+      int res = 0;
+      for (const int orb : eor) {
+        res += SpinDetUtil::get_n_lower_elecs(spin_det, orb);
+      }
+      return res;
+    };
+
+    const int gamma_exp = get_gamma_exp(det_pq->up(), eor_up) +
+                          get_gamma_exp(det_pq->dn(), eor_dn) +
+                          get_gamma_exp(det_rs->up(), eor_up) +
+                          get_gamma_exp(det_rs->dn(), eor_dn);
+    if ((gamma_exp & 1) == 1) H = -H;
+
+    return H;
   }
 };
 

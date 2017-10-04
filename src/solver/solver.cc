@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <utility>
 #include "../injector.h"
+#include "connections.h"
 #include "davidson_util.h"
 
 #define ENERGY_FORMAT "%.12f"
@@ -139,6 +140,7 @@ void SolverImpl::variation(const double eps_var) {
     for (int i = 0; i < n_total_dets; i++) prev_coefs[i] = wf->terms(i).coef();
 
     // Diagonalize.
+    connections->update();
     std::vector<double> diagonal(n_total_dets, 0.0);
     for (int i = 0; i < n_total_dets; i++) {
       const auto& det_i = wf->terms(i).det();
@@ -151,8 +153,6 @@ void SolverImpl::variation(const double eps_var) {
     for (int i = 0; i < n_total_dets; i++) {
       wf->mutable_terms(i)->set_coef(new_coefs[i]);
     }
-
-    timer->end();  // iteration.
 
     // Determine convergence.
     if (std::abs(energy_var_new - energy_var) < 1.0e-6) {
@@ -167,12 +167,36 @@ void SolverImpl::variation(const double eps_var) {
       printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var_new);
       printf("Correlation energy: " ENERGY_FORMAT " Ha\n", energy_corr);
     }
+
+    timer->end();  // iteration.
   }
 };
 
 std::vector<double> SolverImpl::apply_hamiltonian(
     const std::vector<double>& vec) {
-  return vec;
+  const int n_dets = vec.size();
+  Parallel* const parallel = session->get_parallel();
+  const int proc_id = parallel->get_proc_id();
+  const int n_procs = parallel->get_n_procs();
+  std::vector<double> res(n_dets, 0.0);
+
+#pragma omp parallel for reduction(vec_double_plus : res) schedule(dynamic, 10)
+  for (int i = proc_id; i < n_dets; i += n_procs) {
+    const auto& conns = connections->get_connections(i);
+    for (const auto conn : conns) {
+      const int j = conn.first;
+      const double H_ij = conn.second;
+      res[i] += H_ij * vec[j];
+      if (i != j) {
+        res[j] += H_ij * vec[i];
+      }
+    }
+  }
+
+  parallel->reduce_to_sum(res);
+  session->get_timer()->checkpoint("hamiltonian applied");
+
+  return res;
 };
 
 void SolverImpl::perturbation(const double eps_pt){};
