@@ -1,5 +1,6 @@
 #include "connections.h"
 
+#include <cmath>
 #include <limits>
 #include <string>
 #include <utility>
