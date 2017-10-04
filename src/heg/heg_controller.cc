@@ -65,7 +65,7 @@ void HEGControllerImpl::run_all_variations() {
 
     for (int j = 0; j < n_eps_vars; j++) {
       if (j > 0) {
-        if (eps_vars[j] <= eps_vars[j - 1])
+        if (eps_vars[j] > eps_vars[j - 1])
           throw std::invalid_argument("eps_var must be in decreasing order");
         if (eps_vars[j] == eps_vars[j - 1]) continue;
       }

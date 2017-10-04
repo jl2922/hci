@@ -85,6 +85,10 @@ void SolverImpl::setup_hf() {
 
   // Update HF and variational energy.
   energy_hf = energy_var = abstract_system->hamiltonian(det_hf, det_hf);
+
+  // Clear connections.
+  connections->clear();
+
   if (verbose) printf("HF det setup.\n");
 };
 
