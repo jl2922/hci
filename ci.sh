@@ -4,9 +4,7 @@
 test -n $CC && unset CC
 test -n $CXX && unset CXX
 
-set -x
-
-# Install OpenMPI.
+# Install or Load OpenMPI.
 if [ -f "$TOOLS_DIR/openmpi/bin/mpic++" ] && [ -f "$TOOLS_DIR/openmpi/bin/mpic++" ]; then
 	echo "Found cached OpenMPI"
 else
@@ -28,7 +26,7 @@ fi
 export PATH=$TOOLS_DIR/openmpi/bin:$PATH
 export LD_LIBRARY_PATH=$TOOLS_DIR/openmpi/lib:$LD_LIBRARY_PATH
 
-# Install Protocol Buffers.
+# Install or Load Protocol Buffers.
 if [ -f "$TOOLS_DIR/protobuf/bin/protoc" ]; then
 	echo "Found cached Protocol Buffers"
 else
@@ -50,7 +48,7 @@ fi
 export PATH=$TOOLS_DIR/protobuf/bin:$PATH
 export LD_LIBRARY_PATH=$TOOLS_DIR/protobuf/lib:$LD_LIBRARY_PATH
 
-# Install Boost (with MPI).
+# Install or Load Boost (with MPI and serialization).
 if [ -f "$TOOLS_DIR/boost/lib/libboost_mpi.so" ] || [ -f "$TOOLS_DIR/boost/lib/libboost_mpi.dylib" ]; then
 	echo "Found cached Boost"
 else
@@ -74,11 +72,9 @@ fi
 export PATH=$TOOLS_DIR/boost/bin:$PATH
 export LD_LIBRARY_PATH=$TOOLS_DIR/boost/lib:$LD_LIBRARY_PATH
 
-# Install Lockless.
+# Install or Load Lockless.
 if [ -f "$TOOLS_DIR/lockless/lib/libllalloc.so" ]; then
 	echo "Found cached Lockless"
-elif [ "$(uname)" == "Darwin" ]; then
-  echo "Lockless skipped on MacOS"
 else
 	echo "Downloading Lockless"
   mkdir -p downloads
