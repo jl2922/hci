@@ -14,6 +14,10 @@ class DavidsonUtil {
           apply_hamiltonian,
       const int max_iterations,
       const bool verbose);
+
+ private:
+  static void print_intermediate_result(
+      const int iteration, const double lowest_eigenvalue);
 };
 
 #endif
