@@ -20,6 +20,20 @@ std::array<T, N> operator-(
 }
 
 template <class T, size_t N>
+std::array<T, N> &operator+=(
+    std::array<T, N> &lhs, const std::array<T, N> &rhs) {
+  for (size_t i = 0; i < N; i++) lhs[i] += rhs[i];
+  return lhs;
+}
+
+template <class T, size_t N>
+std::array<T, N> &operator-=(
+    std::array<T, N> &lhs, const std::array<T, N> &rhs) {
+  for (size_t i = 0; i < N; i++) lhs[i] -= rhs[i];
+  return lhs;
+}
+
+template <class T, size_t N>
 std::array<double, N> operator*(const std::array<T, N> &lhs, const double rhs) {
   std::array<double, N> res;
   for (size_t i = 0; i < N; i++) res[i] = lhs[i] * rhs;

@@ -56,7 +56,7 @@ std::pair<double, std::vector<double>> DavidsonUtil::diagonalize(
   h_krylov(0, 0) = lowest_eigenvalue;
   w = v.col(0);
   Hw = Hv.col(0);
-  if (verbose) print_intermediate_result(1, lowest_eigenvalue);
+  if (verbose) print_intermediate_result(0, lowest_eigenvalue);
 
   for (int it = 1; it < max_iterations; it++) {
     // Compute residual.
@@ -109,12 +109,12 @@ std::pair<double, std::vector<double>> DavidsonUtil::diagonalize(
     w = v.leftCols(it) * eigenvectors.col(lowest_id).topRows(it);
     Hw = Hv.leftCols(it) * eigenvectors.col(lowest_id).topRows(it);
 
+    if (verbose) print_intermediate_result(it, lowest_eigenvalue);
     if (std::abs(lowest_eigenvalue - lowest_eigenvalue_prev) < TOLERANCE) {
       converged = true;
       break;
     } else {
       lowest_eigenvalue_prev = lowest_eigenvalue;
-      if (verbose) print_intermediate_result(it, lowest_eigenvalue);
     }
 
     if (converged) break;
