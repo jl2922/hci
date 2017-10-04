@@ -11,14 +11,14 @@ else
 	echo "Downloading OpenMPI Source"
   mkdir -p downloads
   cd downloads
-	wget -O openmpi-3.0.0.tar.bz2 https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.bz2 &> wget.log
+	wget -O openmpi-3.0.0.tar.bz2 https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.bz2
 	tar xjf openmpi-3.0.0.tar.bz2
 	echo "Configuring and building OpenMPI"
 	cd openmpi-3.0.0
   mkdir -p $TOOLS_DIR/openmpi
-	./configure --prefix=$TOOLS_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER &> configure.log
-	make -j 8 &> make.log
-	make install &> install.log
+	./configure --prefix=$TOOLS_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER
+	make -j 8
+	make install
 	echo "Completed"
 	echo
 	cd ../../
@@ -33,14 +33,14 @@ else
 	echo "Downloading Protocol Buffers"
   mkdir -p downloads
   cd downloads
-	wget -O protobuf-cpp-3.4.1.tar.gz https://github.com/google/protobuf/releases/download/v3.4.1/protobuf-cpp-3.4.1.tar.gz &> wget.log
+	wget -O protobuf-cpp-3.4.1.tar.gz https://github.com/google/protobuf/releases/download/v3.4.1/protobuf-cpp-3.4.1.tar.gz
 	tar xzf protobuf-cpp-3.4.1.tar.gz
 	echo "Configuring and building Protocol Buffers"
 	cd protobuf-3.4.1
   mkdir -p $TOOLS_DIR/protobuf
-	./configure --prefix=$TOOLS_DIR/protobuf CC=$C_COMPILER CXX=$CXX_COMPILER &> configure.log
-	make -j 8 &> make.log
-	make install &> install.log
+	./configure --prefix=$TOOLS_DIR/protobuf CC=$C_COMPILER CXX=$CXX_COMPILER
+	make -j 8
+	make install
 	echo "Completed"
 	echo
 	cd ../../
@@ -60,11 +60,11 @@ else
 	echo "Configuring and building Boost"
 	cd boost_1_65_1
   mkdir -p $TOOLS_DIR/boost
-  ./bootstrap.sh &> bootstrap.log
+  ./bootstrap.sh
   echo 'libraries =  --with-mpi --with-serialization ;' >> project-config.jam
   echo 'using mpi : mpic++ ;' >> project-config.jam
 	echo 'using gcc : 6 ;' >> project-config.jam
-	./b2 -j8 --prefix=$TOOLS_DIR/boost install &> install.log
+	./b2 -j8 --prefix=$TOOLS_DIR/boost install
 	echo "Completed"
 	echo
 	cd ../../
@@ -79,7 +79,7 @@ else
 	echo "Downloading Lockless"
   mkdir -p downloads
   cd downloads
-	wget -O lockless-1.3.tar.gz https://github.com/jl2922/lockless_allocator/archive/lockless-1.3.tar.gz &> wget.log
+	wget -O lockless-1.3.tar.gz https://github.com/jl2922/lockless_allocator/archive/lockless-1.3.tar.gz
 	tar xzf lockless-1.3.tar.gz
 	echo "Configuring and building Lockless"
 	cd lockless_allocator-lockless-1.3
@@ -96,7 +96,7 @@ export LD_LIBRARY_PATH=$TOOLS_DIR/lockless/lib:$LD_LIBRARY_PATH
 
 # Download Eigen.
 echo "Downloading Eigen"
-wget -O eigen-3.3.4.tar.bz2 http://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2 &> wget.log
+wget -O eigen-3.3.4.tar.bz2 http://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2
 tar xjf eigen-3.3.4.tar.bz2
 rm eigen-3.3.4.tar.bz2
 mkdir -p $TOOLS_DIR/eigen/include
@@ -106,7 +106,7 @@ echo
 
 # Download Google Test.
 echo "Downloading Google Test"
-wget -O release-1.8.0.tar.gz https://github.com/google/googletest/archive/release-1.8.0.tar.gz &> wget.log
+wget -O release-1.8.0.tar.gz https://github.com/google/googletest/archive/release-1.8.0.tar.gz
 tar xzf release-1.8.0.tar.gz
 rm release-1.8.0.tar.gz
 mv googletest-release-1.8.0 gtest
