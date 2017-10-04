@@ -98,18 +98,24 @@ else
 fi
 export LD_LIBRARY_PATH=$TOOLS_DIR/lockless/lib:$LD_LIBRARY_PATH
 
-# Install Google Test.
-if [ -f "gtest/googletest/include/gtest/gtest.h" ]; then
-	echo "Found Google Test"
-else
-	echo "Downloading Google Test"
-	wget -O release-1.8.0.tar.gz https://github.com/google/googletest/archive/release-1.8.0.tar.gz &> wget.log
-	tar xzf release-1.8.0.tar.gz
-	rm release-1.8.0.tar.gz
-	mv googletest-release-1.8.0 gtest
-	echo "Completed"
-	echo
-fi
+# Download Eigen.
+echo "Downloading Eigen"
+wget -O eigen-3.3.4.tar.bz2 http://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2 &> wget.log
+tar xjf eigen-3.3.4.tar.bz2
+rm eigen-3.3.4.tar.bz2
+mkdir -p $TOOLS_DIR/eigen/include
+mv eigen-eigen-5a0156e40feb/Eigen $TOOLS_DIR/eigen/include/
+echo "Completed"
+echo
+
+# Download Google Test.
+echo "Downloading Google Test"
+wget -O release-1.8.0.tar.gz https://github.com/google/googletest/archive/release-1.8.0.tar.gz &> wget.log
+tar xzf release-1.8.0.tar.gz
+rm release-1.8.0.tar.gz
+mv googletest-release-1.8.0 gtest
+echo "Completed"
+echo
 
 cp ci.mk local.mk
 make proto
