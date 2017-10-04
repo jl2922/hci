@@ -16,6 +16,8 @@ class ConnectionsImpl : public Connections {
 
   void update() override;
 
+  void clear() override;
+
   std::vector<std::pair<int, double>> get_connections(const int i) override;
 
  private:
@@ -73,9 +75,19 @@ ConnectionsImpl::ConnectionsImpl(
   n_up = config->get_int("n_up");
   n_dn = config->get_int("n_dn");
   cache_size = config->get_int("cache_size");
+  n_dets = 0;
   n_dets_prev = 0;
   connected.resize(omp_get_max_threads());
   one_up.resize(omp_get_max_threads());
+}
+
+void ConnectionsImpl::clear() {
+  n_dets = 0;
+  n_dets_prev = 0;
+  ab.clear();
+  ab_m1.clear();
+  cache_status.clear();
+  cached_connections.clear();
 }
 
 void ConnectionsImpl::update() {
