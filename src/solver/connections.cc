@@ -31,15 +31,15 @@ class ConnectionsImpl : public Connections {
 
   std::vector<std::vector<std::pair<int, double>>> cached_connections;
 
-  std::vector<uint8_t> cache_status;
+  std::vector<int8_t> cache_status;
 
-  static constexpr uint8_t NOT_CACHED = 0;
+  static constexpr int8_t NOT_CACHED = -1;
 
-  static constexpr uint8_t CACHED = 1;
+  static constexpr int8_t CACHED = 1;
 
-  static constexpr uint8_t CACHE_OUTDATED = 2;
+  static constexpr int8_t CACHE_OUTDATED = 2;
 
-  static constexpr uint8_t CACHE_LIMIT_EXCEEDED = 4;
+  static constexpr int8_t CACHE_LIMIT_EXCEEDED = 4;
 
   // alpha and beta strings, O(n_dets).
   std::unordered_map<std::string, std::pair<std::vector<int>, std::vector<int>>>
