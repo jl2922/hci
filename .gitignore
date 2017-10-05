@@ -16,6 +16,7 @@ config.json
 *.log
 var_*.dat
 out_*.txt
+*.csv
 
 # OS and IDE files.
 .vscode/
