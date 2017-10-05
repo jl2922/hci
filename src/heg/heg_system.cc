@@ -17,6 +17,8 @@ class HEGSystemImpl : public HEGSystem {
 
   void setup(const double rcut) override;
 
+  int get_n_orbitals() const override;
+
   double hamiltonian(
       const data::Determinant* const det_pq,
       const data::Determinant* const det_rs) const override;
@@ -107,6 +109,8 @@ void HEGSystemImpl::setup(const double rcut) {
   // Evaluate HF energy.
   evaluate_energy_hf();
 }
+
+int HEGSystemImpl::get_n_orbitals() const { return k_points.size() * 2; }
 
 double HEGSystemImpl::hamiltonian(
     const data::Determinant* const det_pq,

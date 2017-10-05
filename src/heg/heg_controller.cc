@@ -41,6 +41,8 @@ HEGControllerImpl::HEGControllerImpl(
 void HEGControllerImpl::run() {
   run_all_variations();
 
+  if (session->get_config()->get_bool("variation_only")) return;
+
   run_all_perturbations();
 }
 
