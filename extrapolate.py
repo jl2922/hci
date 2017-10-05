@@ -37,7 +37,7 @@ def BEWRegression(X, y):
         maxPIndex = np.argmax(results.pvalues)
         maxP = results.pvalues[maxPIndex]
 
-        if maxP < 0.5:
+        if maxP < 0.01:
             break
         print('Eliminate: ' + maxPIndex)
         print('P > |t|: ' + str(maxP))
