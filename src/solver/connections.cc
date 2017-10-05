@@ -1,5 +1,6 @@
 #include "connections.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <string>
@@ -91,9 +92,12 @@ void ConnectionsImpl::clear() {
 }
 
 void ConnectionsImpl::update() {
+  n_dets_prev = n_dets;
+  n_dets = abstract_system->wf->terms_size();
+  if (n_dets_prev == n_dets) return;
+
   // Alpha beta strings.
-  const int n_dets_new = abstract_system->wf->terms_size();
-  for (int i = n_dets; i < n_dets_new; i++) {
+  for (int i = n_dets_prev; i < n_dets; i++) {
     const auto& det = abstract_system->wf->terms(i).det();
     ab[det.up().SerializeAsString()].first.push_back(i);
     ab[det.dn().SerializeAsString()].second.push_back(i);
@@ -101,7 +105,7 @@ void ConnectionsImpl::update() {
   if (verbose) printf("Number of unique alpha/beta: %'zu\n", ab.size());
 
   // Alpha beta minus one strings.
-  for (int i = n_dets; i < n_dets_new; i++) {
+  for (int i = n_dets_prev; i < n_dets; i++) {
     const auto& det = abstract_system->wf->terms(i).det();
     const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
     data::SpinDeterminant det_up(det.up());
@@ -125,19 +129,16 @@ void ConnectionsImpl::update() {
   {
     // Connected and one up arrays.
     const int thread_id = omp_get_thread_num();
-    connected[thread_id].assign(n_dets_new, false);
-    one_up[thread_id].assign(n_dets_new, false);
+    connected[thread_id].assign(n_dets, false);
+    one_up[thread_id].assign(n_dets, false);
   }
 
   // Cache.
-  cached_connections.resize(n_dets_new);
-  cache_status.resize(n_dets_new, NOT_CACHED);
-  for (int i = 0; i < n_dets; i++) {
+  cached_connections.resize(n_dets);
+  cache_status.resize(n_dets, NOT_CACHED);
+  for (int i = 0; i < n_dets_prev; i++) {
     if (cache_status[i] == CACHED) cache_status[i] = CACHE_OUTDATED;
   }
-
-  n_dets_prev = n_dets;
-  n_dets = n_dets_new;
 };
 
 std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
@@ -153,12 +154,17 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
   const int thread_id = omp_get_thread_num();
   const auto& det = abstract_system->wf->terms(i).det();
 
+  // Start searching from this det_id.
+  const int start_id = cache_status[i] == CACHE_OUTDATED ? n_dets_prev : i;
+
   // Two up/dn excitations.
   const auto& det_dn_code = det.dn().SerializeAsString();
   if (ab.find(det_dn_code) != ab.end()) {
-    for (const int det_id : ab.find(det_dn_code)->second.second) {
-      if (det_id < i) continue;
-      if (cache_status[i] == CACHE_OUTDATED && det_id < n_dets_prev) continue;
+    const auto& dn_sames = ab.find(det_dn_code)->second.second;
+    const auto& start_it =
+        std::lower_bound(dn_sames.begin(), dn_sames.end(), start_id);
+    for (auto it = start_it; it != dn_sames.end(); it++) {
+      const int det_id = *it;
       if (!connected[thread_id][det_id]) {
         const auto& det_id_det = abstract_system->wf->terms(det_id).det();
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
@@ -170,9 +176,11 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
   }
   const auto& det_up_code = det.up().SerializeAsString();
   if (ab.find(det_up_code) != ab.end()) {
-    for (const int det_id : ab.find(det_up_code)->second.first) {
-      if (det_id < i) continue;
-      if (cache_status[i] == CACHE_OUTDATED && det_id < n_dets_prev) continue;
+    const auto& up_sames = ab.find(det_up_code)->second.first;
+    const auto& start_it =
+        std::lower_bound(up_sames.begin(), up_sames.end(), start_id);
+    for (auto it = start_it; it != up_sames.end(); it++) {
+      const int det_id = *it;
       if (!connected[thread_id][det_id]) {
         const auto& det_id_det = abstract_system->wf->terms(det_id).det();
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
@@ -195,9 +203,10 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
     const auto& kv_up = ab_m1.find(det_up.SerializeAsString());
     if (kv_up != ab_m1.end()) {
       const auto& up_singles = kv_up->second.first;
-      for (const int det_id : up_singles) {
-        if (det_id < i) continue;
-        if (cache_status[i] == CACHE_OUTDATED && det_id < n_dets_prev) continue;
+      const auto& start_it =
+          std::lower_bound(up_singles.begin(), up_singles.end(), start_id);
+      for (auto it = start_it; it != up_singles.end(); it++) {
+        const int det_id = *it;
         one_up[thread_id][det_id] = true;
         one_ups.push_back(det_id);
       }
@@ -210,9 +219,10 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
     const auto& kv_dn = ab_m1.find(det_dn.SerializeAsString());
     if (kv_dn != ab_m1.end()) {
       const auto& dn_singles = kv_dn->second.first;
-      for (const int det_id : dn_singles) {
-        if (det_id < i) continue;
-        if (cache_status[i] == CACHE_OUTDATED && det_id < n_dets_prev) continue;
+      const auto& start_it =
+          std::lower_bound(dn_singles.begin(), dn_singles.end(), start_id);
+      for (auto it = start_it; it != dn_singles.end(); it++) {
+        const int det_id = *it;
         if (one_up[thread_id][det_id] && !connected[thread_id][det_id]) {
           const auto& det_id_det = abstract_system->wf->terms(det_id).det();
           const double H = abstract_system->hamiltonian(&det, &det_id_det);
