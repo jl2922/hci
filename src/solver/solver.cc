@@ -74,7 +74,7 @@ SolverImpl::SolverImpl(
   n_dn = config->get_int("n_dn");
   if (!config->get_bool("variation_only")) {
     pt_result.open("pt_result.csv", std::ios::out | std::ios::trunc);
-    pt_result << "n_pt_orbs, eps_pt, n_pt_dets, energy_corr" << std::endl;
+    pt_result << "n_orbs_pt, eps_pt, n_pt_dets, energy_corr" << std::endl;
   }
 }
 
