@@ -1,0 +1,3 @@
+[submodule "src/omp_hash_map"]
+	path = src/omp_hash_map
+	url = https://github.com/jl2922/omp_hash_map.git
