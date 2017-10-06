@@ -271,6 +271,7 @@ void SolverImpl::perturbation(const double eps_pt) {
 
   // Setup partial sum hash map.
   omp_hash_map<std::string, double> partial_sums;
+  partial_sums.set_max_load_factor(1.618);
 
   // Search pt dets.
   const int n_var_dets = var_dets_set.size();
