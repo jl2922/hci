@@ -23,3 +23,6 @@ cache:
     - tools/protobuf
     - tools/boost
     - tools/lockless
+notification:
+  email: false
+
