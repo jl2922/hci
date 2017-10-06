@@ -337,6 +337,7 @@ void SolverImpl::perturbation(const double eps_pt) {
       reducer::sum<double>,
       0.0);
   parallel->reduce_to_sum(energy_pt);
+  parallel->reduce_to_sum(n_pt_dets);
 
   if (verbose) {
     const int n_pt_orbs = abstract_system->get_n_orbitals();
