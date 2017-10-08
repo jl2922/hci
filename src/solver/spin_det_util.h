@@ -14,6 +14,8 @@ class SpinDetUtil {
   static int get_n_lower_elecs(
       const data::SpinDeterminant& spin_det, const int orb);
 
+  static int get_highest_orbital(const data::SpinDeterminant& spin_det);
+
   static void set_occupation(
       data::SpinDeterminant* spin_det, const int orb, const bool occ);
 

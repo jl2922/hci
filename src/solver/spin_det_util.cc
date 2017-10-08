@@ -64,6 +64,18 @@ int SpinDetUtil::get_n_lower_elecs(
   }
 }
 
+int SpinDetUtil::get_highest_orbital(const data::SpinDeterminant& spin_det) {
+  const int n_hf_elecs = spin_det.n_hf_elecs();
+  const int n_c_elecs = spin_det.c_elecs_size();
+  const int n_v_holes = spin_det.v_holes_size();
+  if (n_c_elecs > 0) {
+    return spin_det.c_elecs(n_c_elecs - 1);
+  } else if (n_v_holes == 0) {
+    return n_hf_elecs - 1;
+  }
+  throw std::runtime_error("n elecs not conserved.");
+}
+
 void SpinDetUtil::set_occupation(
     data::SpinDeterminant* spin_det, const int orb, const bool occ) {
   const int n_hf_elecs = spin_det->n_hf_elecs();

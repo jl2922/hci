@@ -12,6 +12,7 @@
 #include "../omp_hash_map/src/reducer.h"
 #include "connections.h"
 #include "davidson_util.h"
+#include "spin_det_util.h"
 
 #define ENERGY_FORMAT "%.12f"
 
@@ -365,7 +366,11 @@ void SolverImpl::perturbation(
       const int thread_id = omp_get_thread_num();
       auto& det = tmp_dets[thread_id];
       det.ParseFromString(det_code);
-      const int n_orbs_used = 0;
+      const int n_orbs_used =
+          (std::max(
+              SpinDetUtil::get_highest_orbital(det.up()) + 1,
+              SpinDetUtil::get_highest_orbital(det.dn()) + 1)) *
+          2;
       const double H_aa = abstract_system->hamiltonian(&det, &det);
       double partial_sum_value = value;
       for (int j = i; j < n_eps_pts; j++) {
