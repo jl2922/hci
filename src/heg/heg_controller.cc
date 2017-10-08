@@ -19,10 +19,6 @@ class HEGControllerImpl : public HEGController {
 
   std::vector<double> eps_vars;
 
-  std::vector<double> ruct_pts;
-
-  std::vector<double> eps_pts;
-
   Session* const session;
 
   bool is_master = false;
@@ -59,8 +55,11 @@ void HEGControllerImpl::run_all_variations() {
   timer->start("variation");
   const int n_rcut_vars = rcut_vars.size();
   const int n_eps_vars = eps_vars.size();
+  for (int i = 1; i < n_eps_vars; i++) {
+    if (eps_vars[i] >= eps_vars[i - 1])
+      throw std::invalid_argument("eps_var must be in decreasing order");
+  }
   for (int i = 0; i < n_rcut_vars; i++) {
-    if (i > 0 && rcut_vars[i] == rcut_vars[i - 1]) continue;
     const double rcut_var = rcut_vars[i];
     timer->start(str(boost::format("rcut_var: %#.4g") % rcut_var));
 
@@ -70,11 +69,6 @@ void HEGControllerImpl::run_all_variations() {
     timer->end();  // setup.
 
     for (int j = 0; j < n_eps_vars; j++) {
-      if (j > 0) {
-        if (eps_vars[j] > eps_vars[j - 1])
-          throw std::invalid_argument("eps_var must be in decreasing order");
-        if (eps_vars[j] == eps_vars[j - 1]) continue;
-      }
       const double eps_var = eps_vars[j];
       timer->start(str(boost::format("eps_var: %#.4g") % eps_var));
       const auto& filename =
@@ -93,27 +87,41 @@ void HEGControllerImpl::run_all_variations() {
 void HEGControllerImpl::run_all_perturbations() {
   Timer* const timer = session->get_timer();
   Config* const config = session->get_config();
-  const double rcut_pt_ratio = config->get_double("rcut_pt_ratio");
-  const double eps_pt_ratio = config->get_double("eps_pt_ratio");
-
-  timer->start("perturbation");
+  const auto& rcut_pts = config->get_double_array("rcut_pts");
+  const auto& eps_pts = config->get_double_array("eps_pts");
   const int n_rcut_vars = rcut_vars.size();
   const int n_eps_vars = eps_vars.size();
+  const int n_rcut_pts = rcut_pts.size();
+  const int n_eps_pts = eps_pts.size();
+  std::vector<int> n_orbs_pts;
+  for (int i = 0; i < n_rcut_pts; i++) {
+    const double rcut_pt = rcut_pts[i];
+    n_orbs_pts.push_back(heg_system->get_n_orbitals(rcut_pt));
+  }
+
+  timer->start("perturbation");
+  for (int i = 1; i < n_eps_pts; i++) {
+    if (eps_pts[i] >= eps_pts[i - 1])
+      throw std::invalid_argument("eps_pts must be in decreasing order.");
+  }
+  const double max_rcut_pts =
+      *std::max_element(rcut_pts.begin(), rcut_pts.end());
+  if (is_master) {
+    printf("Maximum PT rcut: %#.4g\n", max_rcut_pts);
+    printf("Minimum PT epsilon: %#.4g\n", eps_pts[n_eps_pts - 1]);
+  }
+
+  timer->start("setup");
+  heg_system->setup(max_rcut_pts);
+  timer->end();
+
   for (int i = n_rcut_vars - 1; i >= 0; i--) {
     const double rcut_var = rcut_vars[i];
     timer->start(str(boost::format("rcut_var: %#.4g") % rcut_var));
-    const double rcut_pt = rcut_var * rcut_pt_ratio;
-    if (is_master) printf("rcut_pt: %#.4g\n", rcut_pt);
-
-    timer->start("setup");
-    heg_system->setup(rcut_pt);
-    timer->end();  // setup.
 
     for (int j = n_eps_vars - 1; j >= 0; j--) {
       const double eps_var = eps_vars[j];
       timer->start(str(boost::format("eps_var: %#.4g") % eps_var));
-      const double eps_pt = eps_var * eps_pt_ratio;
-      if (is_master) printf("eps_pt: %#.4g\n", eps_pt);
 
       const auto& filename =
           str(boost::format("var_%#.4g_%#.4g.dat") % eps_var % rcut_var);
@@ -121,7 +129,7 @@ void HEGControllerImpl::run_all_perturbations() {
         throw std::runtime_error("variational results missing.");
       }
 
-      solver->perturbation(eps_pt);
+      // solver->perturbation(eps_pt);
 
       timer->end();  // eps_var.
     }
