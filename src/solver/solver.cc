@@ -289,8 +289,9 @@ void SolverImpl::perturbation(
   const int n_var_dets = var_dets_set.size();
   Parallel* const parallel = session->get_parallel();
   Timer* const timer = session->get_timer();
-  const size_t n_procs = parallel->get_n_procs();
-  const size_t proc_id = parallel->get_proc_id();
+  const int n_procs = parallel->get_n_procs();
+  const int n_threads = parallel->get_n_threads();
+  const int proc_id = parallel->get_proc_id();
   std::hash<std::string> string_hasher;
 
   // Setup partial sum hash map.
@@ -310,7 +311,7 @@ void SolverImpl::perturbation(
 
     const auto& pt_det_handler = [&](const auto& det_a) {
       const auto& det_a_code = det_a->SerializeAsString();
-      const size_t det_a_hash = string_hasher(det_a_code);
+      const int det_a_hash = string_hasher(det_a_code);
       if (var_dets_set.count(det_a_code) == 1) return;
       if (det_a_hash % n_procs != proc_id) return;
       const double H_ai = abstract_system->hamiltonian(&var_det, det_a);
@@ -349,10 +350,48 @@ void SolverImpl::perturbation(
   }
   timer->end();
 
+  // Accumulate partial results.
+  timer->start("accumulation");
+  std::vector<std::vector<unsigned long long>> n_pt_dets(n_eps_pts);
+  std::vector<std::vector<double>> energy_pts(n_eps_pts);
+  for (int i = 0; i < n_eps_pts; i++) {
+    n_pt_dets[i].resize(n_n_orbs_pts, 0);
+    energy_pts[i].resize(n_n_orbs_pts, 0.0);
+  }
+  std::vector<data::Determinant> tmp_dets(n_threads);
+  for (int i = 0; i < n_eps_pts; i++) {
+    partial_sums[i].apply([&](const std::string& det_code, const double value) {
+      const int thread_id = omp_get_thread_num();
+      auto& det = tmp_dets[thread_id];
+      det.ParseFromString(det_code);
+      const double H_aa = abstract_system->hamiltonian(&det, &det);
+      const double contribution = value * value / (energy_var - H_aa);
+#pragma omp atomic
+      n_pt_dets[i][0]++;
+#pragma omp atomic
+      energy_pts[i][0] += contribution;
+    });
+  }
+
+  for (int i = 0; i < n_eps_pts; i++) {
+    parallel->reduce_to_sum(n_pt_dets[i]);
+    parallel->reduce_to_sum(energy_pts[i]);
+
+    if (verbose) {
+      printf("PT eps: %#.4g\n", eps_pts[i]);
+      printf("Perturbation energy: %#.15g Ha\n", energy_pts[i][0]);
+      const double energy_corr = energy_pts[i][0] + energy_var - energy_hf;
+      printf("Correlation energy (pt): %#.15g Ha\n", energy_corr);
+      printf("Number of perturbation dets: %'llu\n", n_pt_dets[i][0]);
+      // pt_result << str(boost::format("%d, %#.4g, %llu, %.12f") % n_pt_orbs %
+      //                  eps_pt % n_pt_dets % energy_corr)
+      //           << std::endl;
+    }
+  }
+
+  timer->end();
   /*
 
-// Accumulate partial results.
-timer->start("accumulation");
 unsigned long long n_pt_dets = 0;
 std::vector<data::Determinant> tmp_dets(parallel->get_n_threads());
 energy_pt = partial_sums.map_reduce<double>(
