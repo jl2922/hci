@@ -37,6 +37,10 @@ class SolverImpl : public Solver {
 
   void perturbation(const double eps_pt) override;
 
+  void perturbation(
+      const std::vector<int>& n_orbs_pts,
+      const std::vector<double>& eps_pts) override;
+
  private:
   int n_up = 0;
 
@@ -354,6 +358,9 @@ void SolverImpl::perturbation(const double eps_pt) {
   }
   timer->end();
 };
+
+void SolverImpl::perturbation(
+    const std::vector<int>& n_orbs_pts, const std::vector<double>& eps_pts) {}
 
 Solver* Injector::new_solver(
     Session* const session,

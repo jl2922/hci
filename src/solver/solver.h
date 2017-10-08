@@ -20,6 +20,10 @@ class Solver {
       const std::vector<double>& vec) = 0;
 
   virtual void perturbation(const double eps_pt) = 0;
+
+  virtual void perturbation(
+      const std::vector<int>& n_orbs_pts,
+      const std::vector<double>& eps_pts) = 0;
 };
 
 #endif

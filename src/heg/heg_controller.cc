@@ -19,6 +19,10 @@ class HEGControllerImpl : public HEGController {
 
   std::vector<double> eps_vars;
 
+  std::vector<double> ruct_pts;
+
+  std::vector<double> eps_pts;
+
   Session* const session;
 
   bool is_master = false;
