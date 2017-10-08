@@ -33,6 +33,12 @@ class ParallelImpl : public Parallel {
     boost::mpi::all_reduce(world, local_value, value, std::plus<double>());
   }
 
+  void reduce_to_sum(std::vector<unsigned long long>& value) {
+    std::vector<unsigned long long> local_value = value;
+    boost::mpi::all_reduce(
+        world, local_value, value, VectorPlus<unsigned long long>());
+  }
+
   void reduce_to_sum(std::vector<double>& value) {
     std::vector<double> local_value = value;
     boost::mpi::all_reduce(world, local_value, value, VectorPlus<double>());

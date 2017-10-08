@@ -59,12 +59,13 @@ def main():
     if len(sys.argv) == 2:
         res_file = sys.argv[1]
 
-    parameters = ['n_orbs_pt_inv', 'eps_pt']
+    parameters = ['n_orbs_var_inv', 'eps_var', 'n_orbs_pt_inv', 'eps_pt']
 
     # Read raw data.
     data = pd.read_csv(res_file)
 
     # Add inverse terms.
+    data['n_orbs_var_inv'] = 1.0 / data['n_orbs_var']
     data['n_orbs_pt_inv'] = 1.0 / data['n_orbs_pt']
 
     # Remove parameters not enough for extrapolation.

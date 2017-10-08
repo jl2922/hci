@@ -19,6 +19,8 @@ class HEGSystemImpl : public HEGSystem {
 
   int get_n_orbitals() const override;
 
+  int get_n_orbitals(const double rcut) const override;
+
   double hamiltonian(
       const data::Determinant* const det_pq,
       const data::Determinant* const det_rs) const override;
@@ -111,6 +113,10 @@ void HEGSystemImpl::setup(const double rcut) {
 }
 
 int HEGSystemImpl::get_n_orbitals() const { return k_points.size() * 2; }
+
+int HEGSystemImpl::get_n_orbitals(const double rcut) const {
+  return KPointsUtil::get_n_k_points(rcut) * 2;
+}
 
 double HEGSystemImpl::hamiltonian(
     const data::Determinant* const det_pq,

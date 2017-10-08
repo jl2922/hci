@@ -8,6 +8,8 @@ class HEGSystem : public AbstractSystem {
   virtual ~HEGSystem() = default;
 
   virtual void setup(const double rcut) = 0;
+
+  virtual int get_n_orbitals(const double rcut) const = 0;
 };
 
 #endif
