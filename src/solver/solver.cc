@@ -365,12 +365,26 @@ void SolverImpl::perturbation(
       const int thread_id = omp_get_thread_num();
       auto& det = tmp_dets[thread_id];
       det.ParseFromString(det_code);
+      const int n_orbs_used = 0;
       const double H_aa = abstract_system->hamiltonian(&det, &det);
-      const double contribution = value * value / (energy_var - H_aa);
+      double partial_sum_value = value;
+      for (int j = i; j < n_eps_pts; j++) {
+        if (j > i) {
+          const double partial_sum_j =
+              partial_sums[j].get_copy_or_default(det_code, 0.0);
+          partial_sums[j].unset(det_code);
+          partial_sum_value += partial_sum_j;
+        }
+        const double contribution =
+            partial_sum_value * partial_sum_value / (energy_var - H_aa);
+        for (int k = 0; k < n_n_orbs_pts; k++) {
+          if (n_orbs_used > n_orbs_pts[k]) continue;
 #pragma omp atomic
-      n_pt_dets[i][0]++;
+          n_pt_dets[j][k]++;
 #pragma omp atomic
-      energy_pts[i][0] += contribution;
+          energy_pts[j][k] += contribution;
+        }
+      }
     });
   }
 
