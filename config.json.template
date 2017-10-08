@@ -9,8 +9,12 @@
   "eps_vars": [
     0.0010
   ],
-  "rcut_pt_ratio": 1.00,
-  "eps_pt_ratio": 0.01,
+  "rcut_pts": [
+    2.5
+  ],
+  "eps_pts": [
+    0.00001
+  ],
   "cache_size": 1000,
   "variation_only": false
 }

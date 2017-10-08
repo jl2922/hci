@@ -263,6 +263,15 @@ std::vector<double> SolverImpl::apply_hamiltonian(
 };
 
 void SolverImpl::perturbation(const double eps_pt) {
+  std::vector<int> n_orbs_pts;
+  std::vector<double> eps_pts;
+  n_orbs_pts.push_back(abstract_system->get_n_orbitals());
+  eps_pts.push_back(eps_pt);
+  perturbation(n_orbs_pts, eps_pts);
+};
+
+void SolverImpl::perturbation(
+    const std::vector<int>& n_orbs_pts, const std::vector<double>& eps_pts) {
   // Clean variation variables.
   connections->clear();
 
@@ -273,17 +282,24 @@ void SolverImpl::perturbation(const double eps_pt) {
     var_dets_set.insert(term.det().SerializeAsString());
   }
 
-  // Setup partial sum hash map.
-  omp_hash_map<std::string, double> partial_sums;
-  partial_sums.set_max_load_factor(1.618);
-
-  // Search pt dets.
+  // Cache variables.
+  const int n_n_orbs_pts = n_orbs_pts.size();
+  const int n_eps_pts = eps_pts.size();
+  const double min_eps_pt = eps_pts.back();
   const int n_var_dets = var_dets_set.size();
   Parallel* const parallel = session->get_parallel();
   Timer* const timer = session->get_timer();
   const size_t n_procs = parallel->get_n_procs();
   const size_t proc_id = parallel->get_proc_id();
   std::hash<std::string> string_hasher;
+
+  // Setup partial sum hash map.
+  std::vector<omp_hash_map<std::string, double>> partial_sums(n_eps_pts);
+  for (int i = 0; i < n_eps_pts; i++) {
+    partial_sums[i].set_max_load_factor(1.618);
+  }
+
+  // Search pt dets.
   double target_progress = 0.25;
   timer->start("search");
 #pragma omp parallel for schedule(static, 1)
@@ -297,17 +313,21 @@ void SolverImpl::perturbation(const double eps_pt) {
       const size_t det_a_hash = string_hasher(det_a_code);
       if (var_dets_set.count(det_a_code) == 1) return;
       if (det_a_hash % n_procs != proc_id) return;
-      partial_sums.set(
-          det_a_code,
-          [&](double& value) {
-            const double H_ai = abstract_system->hamiltonian(&var_det, det_a);
-            value += H_ai * coef;
-          },
-          0.0);
+      const double H_ai = abstract_system->hamiltonian(&var_det, det_a);
+      const double partial_sum_term = H_ai * coef;
+      for (int j = 0; j < n_eps_pts; j++) {
+        if (std::abs(partial_sum_term) >= eps_pts[j]) {
+          partial_sums[j].set(
+              det_a_code,
+              [&](double& value) { value += partial_sum_term; },
+              0.0);
+          break;
+        }
+      }
     };
 
     abstract_system->find_connected_dets(
-        &var_det, eps_pt / std::abs(coef), pt_det_handler);
+        &var_det, min_eps_pt / std::abs(coef), pt_det_handler);
 
     const double current_progress = i * 100.0 / n_var_dets;
     if (target_progress <= current_progress) {
@@ -317,7 +337,11 @@ void SolverImpl::perturbation(const double eps_pt) {
             str(boost::format("Progress: %.2f %%") % target_progress);
         timer->checkpoint(event);
         if (verbose) {
-          printf("Master node PT dets: %'zu\n", partial_sums.get_n_keys());
+          unsigned long long master_n_dets_total = 0;
+          for (int j = 0; j < n_eps_pts; j++) {
+            master_n_dets_total += partial_sums[j].get_n_keys();
+          }
+          printf("Master node PT dets: %'llu\n", master_n_dets_total);
         }
         target_progress *= 2.0;
       }
@@ -325,42 +349,42 @@ void SolverImpl::perturbation(const double eps_pt) {
   }
   timer->end();
 
-  // Accumulate partial results.
-  timer->start("accumulation");
-  unsigned long long n_pt_dets = 0;
-  std::vector<data::Determinant> tmp_dets(parallel->get_n_threads());
-  energy_pt = partial_sums.map_reduce<double>(
-      [&](const std::string& det_code, const double value) {
-        const int thread_id = omp_get_thread_num();
-        auto& det = tmp_dets[thread_id];
-        det.ParseFromString(det_code);
-        const double H_aa = abstract_system->hamiltonian(&det, &det);
+  /*
+
+// Accumulate partial results.
+timer->start("accumulation");
+unsigned long long n_pt_dets = 0;
+std::vector<data::Determinant> tmp_dets(parallel->get_n_threads());
+energy_pt = partial_sums.map_reduce<double>(
+    [&](const std::string& det_code, const double value) {
+      const int thread_id = omp_get_thread_num();
+      auto& det = tmp_dets[thread_id];
+      det.ParseFromString(det_code);
+      const double H_aa = abstract_system->hamiltonian(&det, &det);
 #pragma omp atomic
-        n_pt_dets++;
-        return value * value / (energy_var - H_aa);
-      },
-      reducer::sum<double>,
-      0.0);
-  parallel->reduce_to_sum(energy_pt);
-  parallel->reduce_to_sum(n_pt_dets);
+      n_pt_dets++;
+      return value * value / (energy_var - H_aa);
+    },
+    reducer::sum<double>,
+    0.0);
+parallel->reduce_to_sum(energy_pt);
+parallel->reduce_to_sum(n_pt_dets);
 
-  if (verbose) {
-    const int n_pt_orbs = abstract_system->get_n_orbitals();
-    printf("PT orbitals: %'d\n", n_pt_orbs);
-    printf("PT eps: %#.4g\n", eps_pt);
-    printf("Perturbation energy: %#.15g Ha\n", energy_pt);
-    const double energy_corr = energy_pt + energy_var - energy_hf;
-    printf("Correlation energy (pt): %#.15g Ha\n", energy_corr);
-    printf("Number of perturbation dets: %'llu\n", n_pt_dets);
-    pt_result << str(boost::format("%d, %#.4g, %llu, %.12f") % n_pt_orbs %
-                     eps_pt % n_pt_dets % energy_corr)
-              << std::endl;
-  }
-  timer->end();
-};
-
-void SolverImpl::perturbation(
-    const std::vector<int>& n_orbs_pts, const std::vector<double>& eps_pts) {}
+if (verbose) {
+  const int n_pt_orbs = abstract_system->get_n_orbitals();
+  printf("PT orbitals: %'d\n", n_pt_orbs);
+  printf("PT eps: %#.4g\n", eps_pt);
+  printf("Perturbation energy: %#.15g Ha\n", energy_pt);
+  const double energy_corr = energy_pt + energy_var - energy_hf;
+  printf("Correlation energy (pt): %#.15g Ha\n", energy_corr);
+  printf("Number of perturbation dets: %'llu\n", n_pt_dets);
+  pt_result << str(boost::format("%d, %#.4g, %llu, %.12f") % n_pt_orbs %
+                   eps_pt % n_pt_dets % energy_corr)
+            << std::endl;
+}
+timer->end();
+*/
+}
 
 Solver* Injector::new_solver(
     Session* const session,

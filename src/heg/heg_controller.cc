@@ -129,7 +129,7 @@ void HEGControllerImpl::run_all_perturbations() {
         throw std::runtime_error("variational results missing.");
       }
 
-      // solver->perturbation(eps_pt);
+      solver->perturbation(n_orbs_pts, eps_pts);
 
       timer->end();  // eps_var.
     }
