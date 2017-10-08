@@ -117,6 +117,7 @@ void HEGControllerImpl::run_all_perturbations() {
 
   for (int i = n_rcut_vars - 1; i >= 0; i--) {
     const double rcut_var = rcut_vars[i];
+    const int n_orbs_var = heg_system->get_n_orbitals(rcut_var);
     timer->start(str(boost::format("rcut_var: %#.4g") % rcut_var));
 
     for (int j = n_eps_vars - 1; j >= 0; j--) {
@@ -129,7 +130,7 @@ void HEGControllerImpl::run_all_perturbations() {
         throw std::runtime_error("variational results missing.");
       }
 
-      solver->perturbation(n_orbs_pts, eps_pts);
+      solver->perturbation(n_orbs_var, eps_var, n_orbs_pts, eps_pts);
 
       timer->end();  // eps_var.
     }

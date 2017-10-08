@@ -36,9 +36,9 @@ class SolverImpl : public Solver {
   std::vector<double> apply_hamiltonian(
       const std::vector<double>& vec) override;
 
-  void perturbation(const double eps_pt) override;
-
   void perturbation(
+      const int n_orbs_var,
+      const double eps_var,
       const std::vector<int>& n_orbs_pts,
       const std::vector<double>& eps_pts) override;
 
@@ -79,7 +79,8 @@ SolverImpl::SolverImpl(
   n_dn = config->get_int("n_dn");
   if (!config->get_bool("variation_only")) {
     pt_result.open("pt_result.csv", std::ios::out | std::ios::trunc);
-    pt_result << "n_orbs_pt,eps_pt,n_pt_dets,energy_corr" << std::endl;
+    pt_result << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,n_dets_pt"
+              << std::endl;
   }
 }
 
@@ -263,16 +264,11 @@ std::vector<double> SolverImpl::apply_hamiltonian(
   return res;
 };
 
-void SolverImpl::perturbation(const double eps_pt) {
-  std::vector<int> n_orbs_pts;
-  std::vector<double> eps_pts;
-  n_orbs_pts.push_back(abstract_system->get_n_orbitals());
-  eps_pts.push_back(eps_pt);
-  perturbation(n_orbs_pts, eps_pts);
-};
-
 void SolverImpl::perturbation(
-    const std::vector<int>& n_orbs_pts, const std::vector<double>& eps_pts) {
+    const int n_orbs_var,
+    const double eps_var,
+    const std::vector<int>& n_orbs_pts,
+    const std::vector<double>& eps_pts) {
   // Clean variation variables.
   connections->clear();
 
@@ -412,10 +408,10 @@ void SolverImpl::perturbation(
         const double energy_corr = cur_energy_pt + energy_var - energy_hf;
         printf("Correlation energy (pt): %#.15g Ha\n", energy_corr);
         printf("Number of perturbation dets: %'llu\n", cur_n_pt_dets);
-        // pt_result << str(boost::format("%d, %#.4g, %llu, %.12f") % n_pt_orbs
-        // %
-        //                  eps_pt % n_pt_dets % energy_corr)
-        //           << std::endl;
+        pt_result << str(boost::format("%d, %#.4g, %d, %#.4g, %.12f, %llu") %
+                         n_orbs_var % eps_var % cur_n_orbs_pt % cur_eps_pt %
+                         energy_corr % cur_n_pt_dets)
+                  << std::endl;
       }
     }
   }
