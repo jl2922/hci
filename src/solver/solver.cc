@@ -286,9 +286,9 @@ void SolverImpl::perturbation(
   const int n_var_dets = var_dets_set.size();
   Parallel* const parallel = session->get_parallel();
   Timer* const timer = session->get_timer();
-  const int n_procs = parallel->get_n_procs();
+  const size_t n_procs = parallel->get_n_procs();
   const int n_threads = parallel->get_n_threads();
-  const int proc_id = parallel->get_proc_id();
+  const size_t proc_id = parallel->get_proc_id();
   std::hash<std::string> string_hasher;
 
   // Setup partial sum hash map.
@@ -308,7 +308,7 @@ void SolverImpl::perturbation(
 
     const auto& pt_det_handler = [&](const auto& det_a) {
       const auto& det_a_code = det_a->SerializeAsString();
-      const int det_a_hash = string_hasher(det_a_code);
+      const size_t det_a_hash = string_hasher(det_a_code);
       if (var_dets_set.count(det_a_code) == 1) return;
       if (det_a_hash % n_procs != proc_id) return;
       const double H_ai = abstract_system->hamiltonian(&var_det, det_a);
