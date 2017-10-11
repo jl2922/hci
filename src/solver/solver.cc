@@ -193,6 +193,8 @@ void SolverImpl::variation(const double eps_var) {
     energy_var = energy_var_new;
     iteration++;
 
+    if (verbose) print_var_result();
+
     timer->end();  // iteration.
   }
 };
@@ -208,7 +210,6 @@ void SolverImpl::save_variation_result(const std::string& filename) {
   var_file.close();
   abstract_system->wf.reset(res.release_wf());
   if (verbose) {
-    print_var_result();
     printf("Saved to: %s\n", filename.c_str());
   }
 }
