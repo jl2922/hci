@@ -79,8 +79,8 @@ SolverImpl::SolverImpl(
   n_dn = config->get_int("n_dn");
   if (!config->get_bool("variation_only")) {
     pt_result.open("pt_result.csv", std::ios::out | std::ios::trunc);
-    pt_result << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,n_dets_pt"
-              << std::endl;
+    pt_result << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,"
+              << "energy_hf,energy_var,energy_pt,n_dets_pt" << std::endl;
   }
 }
 
@@ -193,6 +193,8 @@ void SolverImpl::variation(const double eps_var) {
     energy_var = energy_var_new;
     iteration++;
 
+    if (verbose) print_var_result();
+
     timer->end();  // iteration.
   }
 };
@@ -208,7 +210,6 @@ void SolverImpl::save_variation_result(const std::string& filename) {
   var_file.close();
   abstract_system->wf.reset(res.release_wf());
   if (verbose) {
-    print_var_result();
     printf("Saved to: %s\n", filename.c_str());
   }
 }
@@ -408,9 +409,11 @@ void SolverImpl::perturbation(
         const double energy_corr = cur_energy_pt + energy_var - energy_hf;
         printf("Correlation energy (pt): %#.15g Ha\n", energy_corr);
         printf("Number of perturbation dets: %'llu\n", cur_n_pt_dets);
-        pt_result << str(boost::format("%d, %#.4g, %d, %#.4g, %.12f, %llu") %
+        pt_result << str(boost::format("%d, %#.4g, %d, %#.4g, %.12f, "
+                                       "%.12f, %.12f, %.12f, %llu") %
                          n_orbs_var % eps_var % cur_n_orbs_pt % cur_eps_pt %
-                         energy_corr % cur_n_pt_dets)
+                         energy_corr % energy_hf % energy_var % cur_energy_pt %
+                         cur_n_pt_dets)
                   << std::endl;
       }
     }
