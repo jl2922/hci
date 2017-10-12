@@ -16,5 +16,6 @@
     0.00001
   ],
   "cache_size": 1000,
+  "n_pt_batches": 1,
   "variation_only": false
 }
