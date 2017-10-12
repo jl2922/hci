@@ -309,7 +309,7 @@ void SolverImpl::perturbation(
 
   // Processing batch by batch.
   for (size_t b = 0; b < n_pt_batches; b++) {
-    timer->start("batch " + std::to_string(b));
+    timer->start(str(boost::format("batch (%d/%d)") % (b + 1) % n_pt_batches));
 
     // Search pt dets.
     double target_progress = 0.25;
