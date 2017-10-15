@@ -7,6 +7,7 @@ class HEGSystem : public AbstractSystem {
  public:
   virtual ~HEGSystem() = default;
 
+  // Generate k points, hci array, and HF for the specified rcut.
   virtual void setup(const double rcut) = 0;
 
   virtual int get_n_orbitals(const double rcut) const = 0;

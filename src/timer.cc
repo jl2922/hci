@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
+#include <thread>
 #include "injector.h"
 
 #define ANSI_COLOR_RED "\x1b[31m"
@@ -26,6 +27,8 @@ class TimerImpl : public Timer {
   void checkpoint(const std::string& msg) override;
 
   void end() override;
+
+  void sleep(const int seconds) override;
 
  private:
   Parallel* const parallel;
@@ -107,6 +110,17 @@ void TimerImpl::end() {
   }
   start_times.pop_back();
   prev_time = now;
+  barrier();
+}
+
+void TimerImpl::sleep(const int seconds) {
+  using namespace std::chrono_literals;
+  barrier();
+  if (verbose) {
+    printf(
+        ANSI_COLOR_GREEN "[SLEEP FOR %d SECONDS]\n" ANSI_COLOR_RESET, seconds);
+  }
+  std::this_thread::sleep_for(std::chrono::seconds(seconds));
   barrier();
 }
 

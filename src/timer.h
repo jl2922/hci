@@ -16,6 +16,8 @@ class Timer {
   virtual void checkpoint(const std::string& msg) = 0;
 
   virtual void end() = 0;
+
+  virtual void sleep(const int seconds) = 0;
 };
 
 #endif

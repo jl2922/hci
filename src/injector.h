@@ -14,8 +14,6 @@
 // Dependency injection.
 class Injector {
  public:
-  static Session* new_session(int argc, char** argv);
-
   static Session* new_session(
       Parallel* const parallel, Config* const config, Timer* const timer);
 
@@ -33,8 +31,6 @@ class Injector {
 
   static Connections* new_connections(
       Session* const session, AbstractSystem* const abstract_system);
-
-  static HEGController* new_heg_controller(Session* const session);
 
   static HEGController* new_heg_controller(
       Session* const session,

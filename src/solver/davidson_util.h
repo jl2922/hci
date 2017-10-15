@@ -7,6 +7,7 @@
 
 class DavidsonUtil {
  public:
+  // Returns lowest eigen value and eigen vector.
   static std::pair<double, std::vector<double>> diagonalize(
       const std::vector<double>& initial_vector,
       const std::vector<double>& diagonal,

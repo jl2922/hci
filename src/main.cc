@@ -7,11 +7,31 @@ int main(int argc, char** argv) {
 
   std::setlocale(LC_NUMERIC, "");
 
-  std::unique_ptr<Session> session(Injector::new_session(argc, argv));
+  // Initialize parallel.
+  Parallel* const parallel = Injector::new_parallel(argc, argv);
 
-  const auto& type = session->get_config()->get_string("type");
+  // Initialize timer.
+  Timer* const timer = Injector::new_timer(parallel);
+  timer->init();
+
+  // Initialize config.
+  timer->start("Loading configuration");
+  Config* const config = Injector::new_config("config.json", parallel);
+  timer->end();
+
+  // Initialize session.
+  Session* const session = Injector::new_session(parallel, config, timer);
+
+  const auto& type = config->get_string("type");
   if (type == "heg") {
-    Injector::new_heg_controller(session.get())->run();
+    HEGSystem* const heg_system = Injector::new_heg_system(session);
+    Connections* const connections =
+        Injector::new_connections(session, heg_system);
+    Solver* const solver =
+        Injector::new_solver(session, connections, heg_system);
+    HEGController* const heg_controller =
+        Injector::new_heg_controller(session, solver, heg_system);
+    heg_controller->run();
   } else {
     throw std::invalid_argument("System type '" + type + "' is not supported.");
   }
