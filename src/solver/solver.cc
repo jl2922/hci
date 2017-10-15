@@ -98,10 +98,8 @@ void SolverImpl::setup_hf() {
   data::Term* term = wf->add_terms();
   term->set_coef(1.0);
   data::Determinant* det_hf = term->mutable_det();
-  data::SpinDeterminant* up = det_hf->mutable_up();
-  up->set_n_hf_elecs(n_up);
-  data::SpinDeterminant* dn = det_hf->mutable_dn();
-  dn->set_n_hf_elecs(n_dn);
+  det_hf->mutable_up()->set_n_hf_elecs(n_up);
+  det_hf->mutable_dn()->set_n_hf_elecs(n_dn);
 
   // Update HF and variational energy.
   energy_hf = energy_var = abstract_system->hamiltonian(det_hf, det_hf);
@@ -123,19 +121,17 @@ void SolverImpl::variation(const double eps_var) {
   var_dets_set.reserve(n_start_dets);
   prev_coefs.resize(n_start_dets, 0.0);
   for (const auto& term : wf->terms()) {
-    std::string det_code;
-    term.det().SerializeToString(&det_code);
-    var_dets_set.insert(std::move(det_code));
+    var_dets_set.insert(term.det().SerializeAsString());
   }
 
   // Variation iterations.
   bool converged = false;
   int iteration = 0;
   int n_new_dets = 0;
+
   const auto& connected_det_handler =
       [&](const data::Determinant* const connected_det) {
-        std::string det_code;
-        connected_det->SerializeToString(&det_code);
+        std::string det_code = connected_det->SerializeAsString();
         if (var_dets_set.count(det_code) == 0) {
           var_dets_set.insert(std::move(det_code));
           data::Term* const term = wf->add_terms();
@@ -145,8 +141,10 @@ void SolverImpl::variation(const double eps_var) {
           n_new_dets++;
         }
       };
+
   const auto& apply_hamiltonian_func =
       std::bind(&SolverImpl::apply_hamiltonian, this, std::placeholders::_1);
+
   while (!converged) {
     timer->start("Variation: " + std::to_string(iteration));
 
@@ -212,6 +210,7 @@ void SolverImpl::save_variation_result(const std::string& filename) {
   if (verbose) {
     printf("Saved to: %s\n", filename.c_str());
   }
+  session->get_timer()->sleep(3);  // For data consistence on disk.
 }
 
 bool SolverImpl::load_variation_result(const std::string& filename) {

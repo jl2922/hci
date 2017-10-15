@@ -26,22 +26,6 @@ SessionImpl::SessionImpl(
     Parallel* const parallel, Config* const config, Timer* const timer)
     : parallel(parallel), config(config), timer(timer) {}
 
-Session* Injector::new_session(int argc, char** argv) {
-  // Initialize parallel.
-  Parallel* const parallel = Injector::new_parallel(argc, argv);
-
-  // Initialize timer.
-  Timer* const timer = Injector::new_timer(parallel);
-  timer->init();
-
-  // Initialize config.
-  timer->start("Loading configuration");
-  Config* const config = Injector::new_config("config.json", parallel);
-  timer->end();
-
-  return Injector::new_session(parallel, config, timer);
-}
-
 Session* Injector::new_session(
     Parallel* const parallel, Config* const config, Timer* const timer) {
   return new SessionImpl(parallel, config, timer);

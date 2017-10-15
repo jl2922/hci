@@ -7,6 +7,7 @@ class Connections {
  public:
   virtual ~Connections() = default;
 
+  // Update by the new determinants.
   virtual void update() = 0;
 
   virtual void clear() = 0;
