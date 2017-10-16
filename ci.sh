@@ -72,27 +72,27 @@ fi
 export PATH=$TOOLS_DIR/boost/bin:$PATH
 export LD_LIBRARY_PATH=$TOOLS_DIR/boost/lib:$LD_LIBRARY_PATH
 
-# Install or Load Lockless.
-if [ -f "$TOOLS_DIR/lockless/lib/libllalloc.so" ]; then
-	echo "Found cached Lockless"
+# Install or Load tcmalloc.
+if [ -f "$TOOLS_DIR/gperftools/lib/libtcmalloc.so" ]; then
+	echo "Found cached tcmalloc"
 else
-	echo "Downloading Lockless"
+	echo "Downloading tcmalloc"
   mkdir -p downloads
   cd downloads
-	wget -O lockless-1.3.tar.gz https://github.com/jl2922/lockless_allocator/archive/lockless-1.3.tar.gz
-	tar xzf lockless-1.3.tar.gz
-	echo "Configuring and building Lockless"
-	cd lockless_allocator-lockless-1.3
-  mkdir -p $TOOLS_DIR/lockless/lib
+	wget -O gperftools-2.6.1.tar.gz https://github.com/gperftools/gperftools/releases/download/gperftools-2.6.1/gperftools-2.6.1.tar.gz
+	tar xzf gperftools-2.6.1.tar.gz
+	rm gperftools-2.6.1.tar.gz
+	echo "Configuring and building tcmalloc"
+	cd gperftools-2.6.1
+  mkdir -p $TOOLS_DIR/gperftools
+	./configure --prefix=$TOOLS_DIR/gperftools
 	make -j 8
-	cp libllalloc.so.1.3 $TOOLS_DIR/lockless/lib/
-	ln -sf $TOOLS_DIR/lockless/lib/libllalloc.so.1.3 $TOOLS_DIR/lockless/lib/libllalloc.so.1
-	ln -sf $TOOLS_DIR/lockless/lib/libllalloc.so.1.3 $TOOLS_DIR/lockless/lib/libllalloc.so
+	make install
 	echo "Completed"
 	echo
 	cd ../../
 fi
-export LD_LIBRARY_PATH=$TOOLS_DIR/lockless/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$TOOLS_DIR/gperftools/lib:$LD_LIBRARY_PATH
 
 # Download Eigen.
 echo "Downloading Eigen"

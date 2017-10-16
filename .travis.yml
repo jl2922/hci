@@ -22,7 +22,7 @@ cache:
     - tools/openmpi
     - tools/protobuf
     - tools/boost
-    - tools/lockless
+    - tools/gperftools
 notification:
   email: false
 
