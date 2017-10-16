@@ -1,7 +1,9 @@
 # Default options.
 CXX := mpic++
 CXX_WARNING_OPTIONS := -Wall -Wextra -Wno-expansion-to-defined -Wno-int-in-bool-context
-CXXFLAGS := -std=c++17 -O3 -fopenmp -march='native' -mtune='native' $(CXX_WARNING_OPTIONS)
+CXX_MALLOC_OPTIONS := -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+CXX_ARCH_TUNE := -march='native' -mtune='native' # Needs recompile on different CPU models.
+CXXFLAGS := -std=c++17 -O3 -fopenmp $(CXX_ARCH_TUNE) $(CXX_WARNING_OPTIONS) $(CXX_MALLOC_OPTIONS)
 LDLIBS := -pthread -lboost_mpi -lboost_serialization -lprotobuf -lpthread
 SRC_DIR := src
 OBJ_DIR := build
@@ -16,9 +18,12 @@ ifeq ($(UNAME), Linux)
 	EIGEN_DIR := $(TOOLS_DIR)/eigen
 	BOOST_DIR := $(TOOLS_DIR)/boost
 	PROTOBUF_DIR := $(TOOLS_DIR)/protobuf
-	LOCKLESS_DIR := $(TOOLS_DIR)/lockless
+	GPERFTOOLS_DIR := $(TOOLS_DIR)/gperftools
 	CXXFLAGS := $(CXXFLAGS) -I $(EIGEN_DIR)/include -I $(BOOST_DIR)/include -I $(PROTOBUF_DIR)/include
-	LDLIBS := -L $(BOOST_DIR)/lib -L $(LOCKLESS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS) -lllalloc
+	LDLIBS := -L $(BOOST_DIR)/lib -L $(GPERFTOOLS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS) -ltcmalloc
+endif
+ifeq ($(UNAME), Darwin)
+	LDLIBS := $(LDLIBS) -ltcmalloc_minimal
 endif
 
 # Load Makefile.config if exists.
