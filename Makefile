@@ -2,7 +2,8 @@
 CXX := mpic++
 CXX_WARNING_OPTIONS := -Wall -Wextra -Wno-expansion-to-defined -Wno-int-in-bool-context
 CXXFLAGS := -std=c++17 -O3 -fopenmp -march='native' -mtune='native' $(CXX_WARNING_OPTIONS)
-LDLIBS := -pthread -lboost_mpi -lboost_serialization -lprotobuf -lpthread
+LDLIBS := -pthread -lboost_mpi -lboost_serialization -lprotobuf -lpthread -ltcmalloc
+CXXFLAGS := $(CXXFLAGS) -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 SRC_DIR := src
 OBJ_DIR := build
 EXE := hci.x
@@ -18,8 +19,7 @@ ifeq ($(UNAME), Linux)
 	PROTOBUF_DIR := $(TOOLS_DIR)/protobuf
 	GPERFTOOLS_DIR := $(TOOLS_DIR)/gperftools
 	CXXFLAGS := $(CXXFLAGS) -I $(EIGEN_DIR)/include -I $(BOOST_DIR)/include -I $(PROTOBUF_DIR)/include
-	CXXFLAGS := $(CXXFLAGS) -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-	LDLIBS := -L $(BOOST_DIR)/lib -L $(GPERFTOOLS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS) -ltcmalloc
+	LDLIBS := -L $(BOOST_DIR)/lib -L $(GPERFTOOLS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS)
 endif
 
 # Load Makefile.config if exists.
