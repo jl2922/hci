@@ -16,9 +16,10 @@ ifeq ($(UNAME), Linux)
 	EIGEN_DIR := $(TOOLS_DIR)/eigen
 	BOOST_DIR := $(TOOLS_DIR)/boost
 	PROTOBUF_DIR := $(TOOLS_DIR)/protobuf
-	LOCKLESS_DIR := $(TOOLS_DIR)/lockless
+	GPERFTOOLS_DIR := $(TOOLS_DIR)/gperftools
 	CXXFLAGS := $(CXXFLAGS) -I $(EIGEN_DIR)/include -I $(BOOST_DIR)/include -I $(PROTOBUF_DIR)/include
-	LDLIBS := -L $(BOOST_DIR)/lib -L $(LOCKLESS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS) -lllalloc
+	CXXFLAGS := $(CXXFLAGS) -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+	LDLIBS := -L $(BOOST_DIR)/lib -L $(GPERFTOOLS_DIR)/lib -L $(PROTOBUF_DIR)/lib $(LDLIBS) -ltcmalloc
 endif
 
 # Load Makefile.config if exists.
