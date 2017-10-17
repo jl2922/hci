@@ -2,6 +2,7 @@
 #define CONNECTIONS_H_
 
 #include <vector>
+#include "../data.pb.h"
 
 class Connections {
  public:
@@ -13,6 +14,9 @@ class Connections {
   virtual void clear() = 0;
 
   virtual std::vector<std::pair<int, double>> get_connections(const int i) = 0;
+
+  virtual std::vector<std::pair<int, double>> get_connections(
+      const data::Determinant& det, const int i) = 0;
 };
 
 #endif

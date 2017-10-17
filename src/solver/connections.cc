@@ -21,6 +21,9 @@ class ConnectionsImpl : public Connections {
 
   std::vector<std::pair<int, double>> get_connections(const int i) override;
 
+  std::vector<std::pair<int, double>> get_connections(
+      const data::Determinant& det, const int i) override;
+
  private:
   int n_dets = 0;
 
@@ -250,6 +253,113 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
     cached_connections[i].clear();
     cache_status[i] = CACHE_LIMIT_EXCEEDED;
   }
+
+  return res;
+};
+
+std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
+    const data::Determinant& det, const int i) {
+  std::vector<std::pair<int, double>> res;
+  bool skip = false;
+
+  const int thread_id = omp_get_thread_num();
+
+  // Two up/dn excitations.
+  const auto& det_dn_code = det.dn().SerializeAsString();
+  if (ab.find(det_dn_code) != ab.end()) {
+    const auto& dn_sames = ab.find(det_dn_code)->second.second;
+    for (auto it = dn_sames.begin(); it != dn_sames.end(); it++) {
+      const int det_id = *it;
+      if (det_id < i) {
+        skip = true;
+        break;
+      }
+      if (!connected[thread_id][det_id]) {
+        const auto& det_id_det = abstract_system->wf->terms(det_id).det();
+        const double H = abstract_system->hamiltonian(&det, &det_id_det);
+        if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+        connected[thread_id][det_id] = true;
+        res.push_back(std::make_pair(det_id, H));
+      }
+    }
+  }
+  const auto& det_up_code = det.up().SerializeAsString();
+  if (!skip && ab.find(det_up_code) != ab.end()) {
+    const auto& up_sames = ab.find(det_up_code)->second.first;
+    for (auto it = up_sames.begin(); it != up_sames.end(); it++) {
+      const int det_id = *it;
+      if (det_id < i) {
+        skip = true;
+        break;
+      }
+      if (!connected[thread_id][det_id]) {
+        const auto& det_id_det = abstract_system->wf->terms(det_id).det();
+        const double H = abstract_system->hamiltonian(&det, &det_id_det);
+        if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+        connected[thread_id][det_id] = true;
+        res.push_back(std::make_pair(det_id, H));
+      }
+    }
+  }
+
+  // One up one dn excitation.
+  if (!skip) {
+    data::SpinDeterminant det_up(det.up());
+    data::SpinDeterminant det_dn(det.dn());
+    const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
+    const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
+    std::vector<int> one_ups;
+
+    for (int k = 0; k < n_up && !skip; k++) {
+      SpinDetUtil::set_occupation(&det_up, up_elecs[k], false);
+      const auto& kv_up = ab_m1.find(det_up.SerializeAsString());
+      if (kv_up != ab_m1.end()) {
+        const auto& up_singles = kv_up->second.first;
+        for (auto it = up_singles.begin(); it != up_singles.end(); it++) {
+          const int det_id = *it;
+          if (det_id < i) {
+            skip = true;
+            break;
+          }
+          one_up[thread_id][det_id] = true;
+          one_ups.push_back(det_id);
+        }
+      }
+      SpinDetUtil::set_occupation(&det_up, up_elecs[k], true);
+    }
+
+    for (int k = 0; k < n_dn && !skip; k++) {
+      SpinDetUtil::set_occupation(&det_dn, dn_elecs[k], false);
+      const auto& kv_dn = ab_m1.find(det_dn.SerializeAsString());
+      if (kv_dn != ab_m1.end()) {
+        const auto& dn_singles = kv_dn->second.first;
+        for (auto it = dn_singles.begin(); it != dn_singles.end(); it++) {
+          const int det_id = *it;
+          if (det_id < i) {
+            skip = true;
+            break;
+          }
+          if (one_up[thread_id][det_id] && !connected[thread_id][det_id]) {
+            const auto& det_id_det = abstract_system->wf->terms(det_id).det();
+            const double H = abstract_system->hamiltonian(&det, &det_id_det);
+            if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+            connected[thread_id][det_id] = true;
+            res.push_back(std::make_pair(det_id, H));
+          }
+          one_up[thread_id][det_id] = true;
+          one_ups.push_back(det_id);
+        }
+      }
+      SpinDetUtil::set_occupation(&det_dn, dn_elecs[k], true);
+    }
+    for (const size_t det_id : one_ups) one_up[thread_id][det_id] = false;
+  }
+
+  // Reset connected and return.
+  for (const auto& connection : res)
+    connected[thread_id][connection.first] = false;
+
+  if (skip) res.clear();
 
   return res;
 };
