@@ -311,16 +311,20 @@ void SolverImpl::perturbation(
     const auto& pt_det_handler = [&](const auto& det_a) {
       const auto& det_a_code = det_a->SerializeAsString();
       if (var_dets_set.count(det_a_code) == 1) return;
-      const auto& connections_to_i = connections->get_connections(*det_a, i);
-      std::vector<double> partial_sums(n_eps_pts, 0.0);
+      const auto& connections_to_i =
+          connections->get_connections(*det_a, i, min_eps_pt);
+      if (connections_to_i.empty()) return;
+      std::vector<double> findable(n_eps_pts, false);
+      double partial_sum = 0.0;
       for (const auto& connection : connections_to_i) {
         const int j = connection.first;
         const double H_aj = connection.second;
         const double coef_j = abstract_system->wf->terms(j).coef();
-        const double partial_sum = H_aj * coef_j;
+        const double partial_sum_term = coef_j * H_aj;
+        partial_sum += partial_sum_term;
         for (int k = 0; k < n_eps_pts; k++) {
-          if (std::abs(partial_sum) >= eps_pts[k]) {
-            partial_sums[k] += partial_sum;
+          if (std::abs(partial_sum_term) + 1.0e-10 >= eps_pts[k]) {
+            findable[k] = true;
           }
         }
       }
@@ -331,9 +335,9 @@ void SolverImpl::perturbation(
           2;
       const double H_aa = abstract_system->hamiltonian(det_a, det_a);
       for (int k = 0; k < n_eps_pts; k++) {
-        const double partial_sum_k = partial_sums[k];
+        if (!findable[k]) continue;
         const double pt_correction =
-            partial_sum_k * partial_sum_k / (energy_var - H_aa);
+            partial_sum * partial_sum / (energy_var - H_aa);
         for (int l = 0; l < n_n_orbs_pts; l++) {
           if (n_orbs_used > n_orbs_pts[l]) continue;
 #pragma omp atomic

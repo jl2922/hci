@@ -16,7 +16,7 @@ class Connections {
   virtual std::vector<std::pair<int, double>> get_connections(const int i) = 0;
 
   virtual std::vector<std::pair<int, double>> get_connections(
-      const data::Determinant& det, const int i) = 0;
+      const data::Determinant& det, const int i, const double eps) = 0;
 };
 
 #endif
