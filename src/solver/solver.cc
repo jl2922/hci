@@ -289,10 +289,7 @@ void SolverImpl::perturbation(
   Timer* const timer = session->get_timer();
   Config* const config = session->get_config();
   const size_t n_procs = parallel->get_n_procs();
-  const int n_threads = parallel->get_n_threads();
   const size_t proc_id = parallel->get_proc_id();
-  const size_t n_pt_batches = config->get_int("n_pt_batches");
-  std::hash<std::string> string_hasher;
 
   // Setup pt results store.
   std::vector<std::vector<unsigned long long>> n_pt_dets(n_eps_pts);
@@ -306,7 +303,7 @@ void SolverImpl::perturbation(
   double target_progress = 0.25;
   timer->start("search");
 #pragma omp parallel for schedule(static, 1)
-  for (int i = 0; i < n_var_dets; i++) {
+  for (int i = proc_id; i < n_var_dets; i += n_procs) {
     const auto& term = abstract_system->wf->terms(i);
     const auto& var_det = term.det();
     const double coef = term.coef();
