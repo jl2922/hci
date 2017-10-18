@@ -19,13 +19,7 @@ class HEGControllerImpl : public HEGController {
 
   std::vector<double> eps_vars;
 
-  Session* const session;
-
   bool is_master = false;
-
-  const std::unique_ptr<Solver> solver;
-
-  const std::unique_ptr<HEGSystem> heg_system;
 
   void run_all_variations();
 
@@ -34,7 +28,7 @@ class HEGControllerImpl : public HEGController {
 
 HEGControllerImpl::HEGControllerImpl(
     Session* const session, Solver* const solver, HEGSystem* const heg_system)
-    : session(session), solver(solver), heg_system(heg_system) {
+    : HEGController(session, solver, heg_system) {
   is_master = session->get_parallel()->is_master();
 }
 

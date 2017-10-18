@@ -3,9 +3,18 @@
 
 #include "../abstract_system.h"
 #include "../session.h"
+#include "connections.h"
 
 class Solver {
  public:
+  Solver(
+      Session* const session,
+      Connections* const connections,
+      AbstractSystem* const abstract_system)
+      : session(session),
+        connections(connections),
+        abstract_system(abstract_system) {}
+
   virtual ~Solver() = default;
 
   virtual void setup_hf() = 0;
@@ -24,6 +33,13 @@ class Solver {
       const double eps_var,
       const std::vector<int>& n_orbs_pts,
       const std::vector<double>& eps_pts) = 0;
+
+ protected:
+  Session* const session;
+
+  const std::unique_ptr<Connections> connections;
+
+  AbstractSystem* const abstract_system;
 };
 
 #endif

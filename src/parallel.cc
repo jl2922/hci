@@ -56,7 +56,7 @@ class ParallelImpl : public Parallel {
   boost::mpi::communicator world;
 };
 
-ParallelImpl::ParallelImpl(int argc, char** argv) {
+ParallelImpl::ParallelImpl(int argc, char** argv) : Parallel(argc, argv) {
   env.reset(new boost::mpi::environment(argc, argv));
   proc_id = world.rank();
   n_procs = world.size();

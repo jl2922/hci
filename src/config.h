@@ -8,6 +8,11 @@
 
 class Config {
  public:
+  Config(const std::string& filename, Parallel* const parallel) {
+    (void)filename;
+    (void)parallel;
+  }
+
   virtual ~Config() = default;
 
   virtual std::string get_string(const std::string& key) const = 0;
@@ -18,7 +23,8 @@ class Config {
 
   virtual double get_double(const std::string& key) const = 0;
 
-  virtual std::vector<double> get_double_array(const std::string& key) const = 0;
+  virtual std::vector<double> get_double_array(
+      const std::string& key) const = 0;
 };
 
 #endif

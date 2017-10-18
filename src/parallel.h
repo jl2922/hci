@@ -7,6 +7,11 @@
 
 class Parallel {
  public:
+  Parallel(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+  };
+
   virtual ~Parallel() = default;
 
   virtual bool is_master() const = 0;

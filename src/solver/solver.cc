@@ -55,12 +55,6 @@ class SolverImpl : public Solver {
 
   bool verbose = false;
 
-  Session* const session;
-
-  const std::unique_ptr<Connections> connections;
-
-  AbstractSystem* const abstract_system;
-
   std::ofstream pt_result;
 
   void print_var_result() const;
@@ -70,9 +64,7 @@ SolverImpl::SolverImpl(
     Session* const session,
     Connections* const connections,
     AbstractSystem* const abstract_system)
-    : session(session),
-      connections(connections),
-      abstract_system(abstract_system) {
+    : Solver(session, connections, abstract_system) {
   verbose = session->get_parallel()->is_master();
   Config* const config = session->get_config();
   n_up = config->get_int("n_up");

@@ -7,6 +7,10 @@
 
 class HEGController {
  public:
+  HEGController(
+      Session* const session, Solver* const solver, HEGSystem* const heg_system)
+      : session(session), solver(solver), heg_system(heg_system) {}
+
   virtual ~HEGController() = default;
 
   // Read config.
@@ -16,6 +20,13 @@ class HEGController {
   // For each rcut_var and eps_var:
   //   Run perturbation.
   virtual void run() = 0;
+
+ protected:
+  Session* const session;
+
+  const std::unique_ptr<Solver> solver;
+
+  const std::unique_ptr<HEGSystem> heg_system;
 };
 
 #endif
