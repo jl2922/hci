@@ -334,7 +334,7 @@ std::vector<double> SolverImpl::get_energy_pt_dtm(
     }
     timer->end();  // Search.
 
-    timer->start("accum");
+    timer->start("accumulate");
     std::vector<double> energy_pts_dtm_batch(n_n_orbs_pts, 0.0);
     std::vector<data::Determinant> tmp_dets(n_threads);
     partial_sums.apply([&](const std::string& det_code, const double value) {
@@ -360,21 +360,21 @@ std::vector<double> SolverImpl::get_energy_pt_dtm(
     timer->end();  // Accumulation.
 
     if (verbose) {
-      printf("%-20s", "CUM. energy PT:");
+      printf("%20s", "CUM. energy PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        printf("%-20.12f", energy_pts_dtm[i]);
+        printf("%20.12f", energy_pts_dtm[i]);
       }
       printf("\n");
-      printf("%-20s", "EST. energy PT:");
+      printf("%20s", "EST. energy PT:");
       std::vector<double> energy_corrs_dtm(n_n_orbs_pts);
       for (int i = 0; i < n_n_orbs_pts; i++) {
         energy_corrs_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
-        printf("%-20.12f", energy_corrs_dtm[i]);
+        printf("%20.12f", energy_corrs_dtm[i]);
       }
       printf("\n");
-      printf("%-20s", "EST. corr PT:");
+      printf("%20s", "EST. corr PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        printf("%-20.12f", energy_corrs_dtm[i] + energy_var - energy_hf);
+        printf("%20.12f", energy_corrs_dtm[i] + energy_var - energy_hf);
       }
       printf("\n");
     }
@@ -387,9 +387,9 @@ std::vector<double> SolverImpl::get_energy_pt_dtm(
   parallel->reduce_to_sum(n_pt_dets_dtm);
 
   if (verbose) {
-    printf("%-20s", "Number of dets PT:");
+    printf("%20s", "# dtm PT dets:");
     for (int i = 0; i < n_n_orbs_pts; i++) {
-      printf("%'-20llu", n_pt_dets_dtm[i]);
+      printf("%'20llu", n_pt_dets_dtm[i]);
     }
     printf("\n");
   }
