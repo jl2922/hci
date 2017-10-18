@@ -76,6 +76,13 @@ int SpinDetUtil::get_highest_orbital(const data::SpinDeterminant& spin_det) {
   throw std::runtime_error("n elecs not conserved.");
 }
 
+int SpinDetUtil::get_n_orbs_used(const data::Determinant& det) {
+  const int highest_orb = std::max(
+      SpinDetUtil::get_highest_orbital(det.up()),
+      SpinDetUtil::get_highest_orbital(det.dn()));
+  return (highest_orb + 1) * 2;
+}
+
 void SpinDetUtil::set_occupation(
     data::SpinDeterminant* spin_det, const int orb, const bool occ) {
   const int n_hf_elecs = spin_det->n_hf_elecs();

@@ -16,6 +16,8 @@ class SpinDetUtil {
 
   static int get_highest_orbital(const data::SpinDeterminant& spin_det);
 
+  static int get_n_orbs_used(const data::Determinant& det);
+
   static void set_occupation(
       data::SpinDeterminant* spin_det, const int orb, const bool occ);
 

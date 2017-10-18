@@ -36,6 +36,8 @@ int main(int argc, char** argv) {
     throw std::invalid_argument("System type '" + type + "' is not supported.");
   }
 
+  delete session;
+
   google::protobuf::ShutdownProtobufLibrary();
 
   return 0;
