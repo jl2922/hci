@@ -16,7 +16,7 @@
 
 class TimerImpl : public Timer {
  public:
-  TimerImpl(Parallel* const parallel) : parallel(parallel) {
+  TimerImpl(Parallel* const parallel) : Timer(parallel) {
     verbose = parallel->is_master();
   }
 
@@ -31,8 +31,6 @@ class TimerImpl : public Timer {
   void sleep(const int seconds) override;
 
  private:
-  Parallel* const parallel;
-
   bool verbose = false;
 
   std::chrono::high_resolution_clock::time_point init_time;

@@ -5,6 +5,8 @@
 
 class HEGSystem : public AbstractSystem {
  public:
+  HEGSystem(Session* const session) : AbstractSystem(session) {}
+
   virtual ~HEGSystem() = default;
 
   // Generate k points, hci array, and HF for the specified rcut.

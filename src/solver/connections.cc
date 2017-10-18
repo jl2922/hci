@@ -57,10 +57,6 @@ class ConnectionsImpl : public Connections {
   std::vector<std::vector<bool>> connected;
 
   std::vector<std::vector<bool>> one_up;
-
-  Session* const session;
-
-  AbstractSystem* const abstract_system;
 };
 
 constexpr uint8_t ConnectionsImpl::NOT_CACHED;
@@ -70,7 +66,7 @@ constexpr uint8_t ConnectionsImpl::CACHE_LIMIT_EXCEEDED;
 
 ConnectionsImpl::ConnectionsImpl(
     Session* const session, AbstractSystem* const abstract_system)
-    : session(session), abstract_system(abstract_system) {
+    : Connections(session, abstract_system) {
   verbose = session->get_parallel()->is_master();
   Config* const config = session->get_config();
   n_up = config->get_int("n_up");

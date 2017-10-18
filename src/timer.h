@@ -7,6 +7,8 @@
 
 class Timer {
  public:
+  Timer(Parallel* const parallel) : parallel(parallel) {}
+
   virtual ~Timer() = default;
 
   virtual void init() = 0;
@@ -18,6 +20,9 @@ class Timer {
   virtual void end() = 0;
 
   virtual void sleep(const int seconds) = 0;
+
+ protected:
+  Parallel* const parallel;
 };
 
 #endif

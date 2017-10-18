@@ -4,9 +4,12 @@
 #include <functional>
 #include <memory>
 #include "data.pb.h"
+#include "session.h"
 
 class AbstractSystem {
  public:
+  AbstractSystem(Session* const session) : session(session) {}
+
   std::unique_ptr<data::Wavefunction> wf;
 
   virtual ~AbstractSystem() = default;
@@ -22,6 +25,9 @@ class AbstractSystem {
       const double eps,
       const std::function<void(const data::Determinant* const)>&
           connected_det_handler) const = 0;
+
+ protected:
+  Session* const session;
 };
 
 #endif

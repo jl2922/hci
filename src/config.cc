@@ -32,7 +32,8 @@ class ConfigImpl : public Config {
   boost::property_tree::ptree config_tree;
 };
 
-ConfigImpl::ConfigImpl(const std::string& filename, Parallel* const parallel) {
+ConfigImpl::ConfigImpl(const std::string& filename, Parallel* const parallel)
+    : Config(filename, parallel) {
   boost::property_tree::read_json(filename, config_tree);
   if (parallel->is_master()) {
     printf("Configuration:\n");

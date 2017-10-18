@@ -67,8 +67,6 @@ class HEGSystemImpl : public HEGSystem {
   std::vector<std::pair<std::array<int8_t, 3>, double>>
       opposite_spin_hci_queue;  // O(k_points).
 
-  Session* const session;
-
   void setup_hci_queue();
 
   void evaluate_energy_hf();
@@ -76,7 +74,7 @@ class HEGSystemImpl : public HEGSystem {
   double hamiltonian_diagonal(const data::Determinant* const det) const;
 };
 
-HEGSystemImpl::HEGSystemImpl(Session* const session) : session(session) {
+HEGSystemImpl::HEGSystemImpl(Session* const session) : HEGSystem(session) {
   verbose = session->get_parallel()->is_master();
   Config* const config = session->get_config();
   r_s = config->get_double("r_s");
