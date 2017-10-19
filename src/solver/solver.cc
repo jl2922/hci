@@ -55,8 +55,13 @@ class SolverImpl : public Solver {
 
   void print_var_result() const;
 
-  std::vector<double> get_energy_pt_dtm(
+  std::vector<double> get_energy_pts_dtm(
       const std::vector<int>& n_orbs_pts) const;
+
+  std::vector<std::vector<double>> get_energy_pts_stc(
+      const std::vector<int>& n_orbs_pts,
+      const std::vector<double>& eps_pts,
+      const std::vector<double>& energy_pts_dtm) const;
 };
 
 SolverImpl::SolverImpl(
@@ -261,12 +266,16 @@ void SolverImpl::perturbation(
   connections->clear();
 
   // Get Deterministic PT correction.
-  const auto& energy_pt_det = get_energy_pt_dtm(n_orbs_pts);
+  const auto& energy_pts_dtm = get_energy_pts_dtm(n_orbs_pts);
 
   // Get Stochastic PT correction.
+  const auto& energy_pts_stc =
+      get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
+
+  // Record results.
 }
 
-std::vector<double> SolverImpl::get_energy_pt_dtm(
+std::vector<double> SolverImpl::get_energy_pts_dtm(
     const std::vector<int>& n_orbs_pts) const {
   // Construct var dets set.
   std::unordered_set<std::string> var_dets_set;
@@ -419,6 +428,11 @@ std::vector<double> SolverImpl::get_energy_pt_dtm(
 
   return energy_pts_dtm;
 }
+
+std::vector<std::vector<double>> SolverImpl::get_energy_pts_stc(
+    const std::vector<int>& n_orbs_pts,
+    const std::vector<double>& eps_pts,
+    const std::vector<double>& energy_pts_dtm) const {}
 
 Solver* Injector::new_solver(
     Session* const session,
