@@ -51,6 +51,8 @@ class SolverImpl : public Solver {
 
   double energy_var = 0.0;
 
+  std::unordered_set<std::string> var_dets_set;
+
   bool verbose = false;
 
   void print_var_result() const;
@@ -107,7 +109,7 @@ void SolverImpl::variation(const double eps_var) {
   // Contruct variational determinant hash set.
   data::Wavefunction* const wf = abstract_system->wf.get();
   const int n_start_dets = wf->terms_size();
-  std::unordered_set<std::string> var_dets_set;
+  var_dets_set.clear();
   std::vector<double> prev_coefs;
   var_dets_set.reserve(n_start_dets);
   prev_coefs.resize(n_start_dets, 0.0);
@@ -265,34 +267,28 @@ void SolverImpl::perturbation(
   // Clean variation variables.
   connections->clear();
 
+  // Construct var dets set.
+  var_dets_set.clear();
+  var_dets_set.reserve(abstract_system->wf->terms_size());
+  for (const auto& term : abstract_system->wf->terms()) {
+    var_dets_set.insert(term.det().SerializeAsString());
+  }
+
   // Get Deterministic PT correction.
   const auto& energy_pts_dtm = get_energy_pts_dtm(n_orbs_pts);
 
-  // Get Stochastic PT correction.
-  const auto& energy_pts_stc =
-      get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
+  // // Get Stochastic PT correction.
+  // const auto& energy_pts_stc =
+  //     get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
 
   // Record results.
 }
 
 std::vector<double> SolverImpl::get_energy_pts_dtm(
     const std::vector<int>& n_orbs_pts) const {
-  // Construct var dets set.
-  std::unordered_set<std::string> var_dets_set;
-  var_dets_set.reserve(abstract_system->wf->terms_size());
-  for (const auto& term : abstract_system->wf->terms()) {
-    var_dets_set.insert(term.det().SerializeAsString());
-  }
-
   // Cache commonly used variables.
   const int n_n_orbs_pts = n_orbs_pts.size();
   const int n_var_dets = var_dets_set.size();
-  Parallel* const parallel = session->get_parallel();
-  Config* const config = session->get_config();
-  Timer* const timer = session->get_timer();
-  const size_t n_procs = parallel->get_n_procs();
-  const int n_threads = parallel->get_n_threads();
-  const size_t proc_id = parallel->get_proc_id();
   const size_t n_pt_batches_dtm = config->get_int("n_pt_batches_dtm");
   const double eps_pt_dtm = config->get_double("eps_pt_dtm");
   std::hash<std::string> string_hasher;
@@ -397,15 +393,15 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
       }
       printf("\n");
       printf("%20s", "EST. energy PT:");
-      std::vector<double> energy_corrs_dtm(n_n_orbs_pts);
+      std::vector<double> energy_est_dtm(n_n_orbs_pts);
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        energy_corrs_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
-        printf("%20.12f", energy_corrs_dtm[i]);
+        energy_est_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
+        printf("%20.12f", energy_est_dtm[i]);
       }
       printf("\n");
       printf("%20s", "EST. COR. PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        printf("%20.12f", energy_corrs_dtm[i] + energy_var - energy_hf);
+        printf("%20.12f", energy_est_dtm[i] + energy_var - energy_hf);
       }
       printf("\n");
     }

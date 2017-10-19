@@ -13,7 +13,14 @@ class Solver {
       AbstractSystem* const abstract_system)
       : session(session),
         connections(connections),
-        abstract_system(abstract_system) {}
+        abstract_system(abstract_system) {
+    parallel = session->get_parallel();
+    config = session->get_config();
+    timer = session->get_timer();
+    n_procs = parallel->get_n_procs();
+    n_threads = parallel->get_n_threads();
+    proc_id = parallel->get_proc_id();
+  }
 
   virtual ~Solver() = default;
 
@@ -36,6 +43,18 @@ class Solver {
 
  protected:
   Session* const session;
+
+  Parallel* parallel;
+
+  Config* config;
+
+  Timer* timer;
+
+  size_t n_procs;
+
+  int n_threads;
+
+  size_t proc_id;
 
   const std::unique_ptr<Connections> connections;
 
