@@ -16,6 +16,11 @@
 
 #define ENERGY_FORMAT "%.12f"
 
+class UncertainResult {
+  double value = 0.0;
+  double uncertainty = 0.0;
+};
+
 class SolverImpl : public Solver {
  public:
   ~SolverImpl();
@@ -60,7 +65,7 @@ class SolverImpl : public Solver {
   std::vector<double> get_energy_pts_dtm(
       const std::vector<int>& n_orbs_pts) const;
 
-  std::vector<std::vector<double>> get_energy_pts_stc(
+  std::vector<std::vector<UncertainResult>> get_energy_pts_stc(
       const std::vector<int>& n_orbs_pts,
       const std::vector<double>& eps_pts,
       const std::vector<double>& energy_pts_dtm) const;
@@ -277,9 +282,9 @@ void SolverImpl::perturbation(
   // Get Deterministic PT correction.
   const auto& energy_pts_dtm = get_energy_pts_dtm(n_orbs_pts);
 
-  // // Get Stochastic PT correction.
-  // const auto& energy_pts_stc =
-  //     get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
+  // Get Stochastic PT correction.
+  const auto& energy_pts_stc =
+      get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
 
   // Record results.
 }
@@ -425,10 +430,21 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
   return energy_pts_dtm;
 }
 
-std::vector<std::vector<double>> SolverImpl::get_energy_pts_stc(
+std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     const std::vector<int>& n_orbs_pts,
     const std::vector<double>& eps_pts,
-    const std::vector<double>& energy_pts_dtm) const {}
+    const std::vector<double>& energy_pts_dtm) const {
+  const int n_n_orbs_pts = n_orbs_pts.size();
+  const int n_eps_pts = eps_pts.size();
+  std::vector<std::vector<UncertainResult>> energy_pts_stc(n_eps_pts);
+  std::vector<omp_hash_map<std::string, double>> partial_sums(n_eps_pts);
+  for (int i = 0; i < n_eps_pts; i++) {
+    energy_pts_stc[i].resize(n_n_orbs_pts);
+    partial_sums[i].set_max_load_factor(1.618);
+  }
+
+  return energy_pts_stc;
+}
 
 Solver* Injector::new_solver(
     Session* const session,
