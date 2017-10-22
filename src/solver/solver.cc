@@ -11,6 +11,7 @@
 #include "../injector.h"
 #include "../omp_hash_map/src/omp_hash_map.h"
 #include "../omp_hash_map/src/reducer.h"
+#include "../vector_stats.h"
 #include "connections.h"
 #include "davidson_util.h"
 #include "spin_det_util.h"
@@ -73,8 +74,6 @@ class SolverImpl : public Solver {
       const std::vector<double>& energy_pts_dtm) const;
 
   double get_weight(const int i) const;
-
-  int get_sample_from_probs(const std::vector<double>& probs) const;
 };
 
 SolverImpl::SolverImpl(
@@ -290,7 +289,11 @@ void SolverImpl::perturbation(
 
   // Check eps_pts validity.
   const int n_eps_pts = eps_pts.size();
-  for (int i = 1; i < n_eps_pts; i++) assert(eps_pts[i] < eps_pts[i - 1]);
+  const double eps_dtm_pt = config->get_double("eps_dtm_pt");
+  for (int i = 1; i < n_eps_pts; i++) {
+    assert(eps_pts[i] <= eps_dtm_pt);
+    assert(eps_pts[i] < eps_pts[i - 1]);
+  }
 
   // Get Stochastic PT correction.
   const auto& energy_pts_stc =
@@ -490,6 +493,10 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     timer->start(str(boost::format("stc loop: %d") % iteration));
 
     // Cleanup.
+    for (int i = 0; i < n_eps_pts; i++) {
+      partial_sums[i].clear();
+    }
+    partial_sums_dtm.clear();
     stc_pt_dets.clear();
 
     // Append loop results store.
@@ -501,13 +508,14 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
     // Generate random samples.
     for (int i = 0; i < n_samples; i++) {
-      const double rand01 = ((double)rand() / (RAND_MAX));
+      const double rand_01 = ((double)rand() / (RAND_MAX));
       const int sample_det_id =
-          std::lower_bound(cum_probs.begin(), cum_probs.end(), rand01) -
+          std::lower_bound(cum_probs.begin(), cum_probs.end(), rand_01) -
           cum_probs.begin();
       stc_pt_dets[sample_det_id]++;
     }
 
+    // Use one batch to estimate contribution from all batches.
     const size_t selected_batch = rand() % n_batches;
 
     // Search PT dets from selected sample var dets.
@@ -532,19 +540,19 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
         const double factor =
             1.0 / (energy_var - H_aa) / n_samples / (n_samples - 1);
         const double partial_sum_term = H_ai * coef;
-        const double contrib1 = cnt * partial_sum_term / prob * sqrt(-factor);
+        const double contrib_1 = cnt * partial_sum_term / prob * sqrt(-factor);
 
         // Add to dtm partial sum.
         if (std::abs(partial_sum_term) >= eps_dtm_pt) {
           partial_sums_dtm.set(
-              det_a_code, [&](double& value) { value += contrib1; }, 0.0);
+              det_a_code, [&](double& value) { value += contrib_1; }, 0.0);
         }
 
         // Add to partial sums.
         for (int i = 0; i < n_eps_pts; i++) {
           if (std::abs(partial_sum_term) >= eps_pts[i]) {
             partial_sums[i].set(
-                det_a_code, [&](double& value) { value += contrib1; }, 0.0);
+                det_a_code, [&](double& value) { value += contrib_1; }, 0.0);
             break;
           }
         }
@@ -552,7 +560,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
         // Calculate 2nd order contribution if not belong to dtm pt .
         if (std::abs(partial_sum_term) >= eps_dtm_pt) return;
 
-        const double contrib2 =
+        const double contrib_2 =
             (cnt * (n_samples - 1.0) / prob - (cnt * cnt) / (prob * prob)) *
             partial_sum_term * partial_sum_term * factor;
         const int n_orbs_used = SpinDetUtil::get_n_orbs_used(*det_a);
@@ -560,7 +568,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
           if (std::abs(partial_sum_term) < eps_pts[i]) continue;
           for (int j = 0; j < n_n_orbs_pts; j++) {
             if (n_orbs_pts[j] > n_orbs_used) continue;
-            energy_pts_loop[i][j][iteration] += contrib2;
+            energy_pts_loop[i][j][iteration] += contrib_2;
           }
         }
       };
@@ -571,37 +579,35 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
     // Accumulate and get PT correction from batch.
     for (int i = 0; i < n_eps_pts; i++) {
-      partial_sums[i].apply([&](
-          const std::string& det_code, const double value) {
-        const int thread_id = omp_get_thread_num();
-        auto& det = tmp_dets[thread_id];
-        det.ParseFromString(det_code);
+      partial_sums[i].apply(
+          [&](const std::string& det_code, const double value) {
+            const int thread_id = omp_get_thread_num();
+            auto& det = tmp_dets[thread_id];
+            det.ParseFromString(det_code);
 
-        const double H_aa = abstract_system->hamiltonian(&det, &det);
+            double cum_value = value;
+            const double value_dtm =
+                partial_sums_dtm.get_copy_or_default(det_code, 0.0);
 
-        double cum_value = value;
-        const double value_dtm =
-            partial_sums_dtm.get_copy_or_default(det_code, 0.0);
+            const int n_orbs_used = SpinDetUtil::get_n_orbs_used(det);
+            for (int j = i; j < n_eps_pts; j++) {
+              if (j > i) {
+                const double value_j =
+                    partial_sums[j].get_copy_or_default(det_code, 0.0);
+                partial_sums[j].unset(det_code);
+                cum_value += value_j;
+              }
 
-        const int n_orbs_used = SpinDetUtil::get_n_orbs_used(det);
-        for (int j = i; j < n_eps_pts; j++) {
-          if (j > i) {
-            const double value_j =
-                partial_sums[j].get_copy_or_default(det_code, 0.0);
-            partial_sums[j].unset(det_code);
-            cum_value += value_j;
-          }
+              const double contrib_1 =
+                  -cum_value * cum_value + value_dtm * value_dtm;
 
-          const double contrib_1 = cum_value * cum_value -
-                                   value_dtm * value_dtm / (energy_var - H_aa);
-
-          for (int k = 0; k < n_n_orbs_pts; k++) {
-            if (n_orbs_used > n_orbs_pts[k]) continue;
+              for (int k = 0; k < n_n_orbs_pts; k++) {
+                if (n_orbs_used > n_orbs_pts[k]) continue;
 #pragma omp atomic
-            energy_pts_loop[j][k][iteration] += contrib_1;
-          }
-        }
-      });
+                energy_pts_loop[j][k][iteration] += contrib_1;
+              }
+            }
+          });
     }
 
     // Report results.
@@ -615,17 +621,19 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
         printf("\n");
         printf("%20s", "EST. stc energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_stc[i][j].value);
+          printf("%20.12f", get_avg(energy_pts_loop[i][j]));
         }
         printf("\n");
         printf("%20s", "EST. energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_stc[i][j].value + energy_pts_dtm[j]);
+          printf("%20.12f", get_avg(energy_pts_loop[i][j]) + energy_pts_dtm[j]);
         }
         printf("\n");
         printf("%20s", "STDEV:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_stc[i][j].value);
+          printf(
+              "%20.12f",
+              get_stdev(energy_pts_loop[i][j]) / sqrt(iteration + 1));
         }
         printf("\n");
       }
