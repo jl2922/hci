@@ -538,7 +538,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     stc_pt_sample_dets_list.clear();
 
     std::vector<std::vector<double>> energy_pts_loop(n_eps_pts);
-    for (int i = 0; i < n_n_orbs_pts; i++) {
+    for (int i = 0; i < n_eps_pts; i++) {
       energy_pts_loop[i].resize(n_n_orbs_pts, 0.0);
     }
 
@@ -599,9 +599,6 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
           }
         }
 
-        printf("here\n");
-        fflush(stdout);
-
         // Calculate 2nd order contribution if not belong to dtm pt .
         if (std::abs(partial_sum_term) >= eps_dtm_pt) return;
 
@@ -617,9 +614,6 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
             energy_pts_loop[i][j] += contrib_2;
           }
         }
-
-        printf("here2\n");
-        fflush(stdout);
       };
 
       abstract_system->find_connected_dets(
