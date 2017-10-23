@@ -18,6 +18,7 @@
 
 #define ENERGY_FORMAT "%.12f"
 #define MAX_HASH_LOAD 1.618
+#define PT_RESULTS_LOG "pt_results.csv"
 
 class UncertainResult {
  public:
@@ -289,8 +290,8 @@ void SolverImpl::perturbation(
   const auto& energy_pts_dtm = get_energy_pts_dtm(n_orbs_pts);
 
   // Check eps_pts validity.
-  const int n_eps_pts = eps_pts.size();
   const double eps_dtm_pt = config->get_double("eps_dtm_pt");
+  const int n_eps_pts = eps_pts.size();
   for (int i = 1; i < n_eps_pts; i++) {
     assert(eps_pts[i] <= eps_dtm_pt);
     assert(eps_pts[i] < eps_pts[i - 1]);
@@ -301,6 +302,37 @@ void SolverImpl::perturbation(
       get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
 
   // Record results.
+  bool log_file_exists = false;
+  if (std::ifstream(PT_RESULTS_LOG)) {
+    log_file_exists = true;
+  }
+  std::ofstream results_log(
+      PT_RESULTS_LOG, std::ios_base::app | std::ios_base::out);
+  if (!log_file_exists) {
+    results_log << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,uncert,"
+                << "energy_hf,energy_var,energy_pt" << std::endl;
+  }
+
+  const int n_n_orbs_pts = n_orbs_pts.size();
+  for (int i = 0; i < n_eps_pts; i++) {
+    for (int j = 0; j < n_n_orbs_pts; j++) {
+      const double eps_pt = eps_pts[i];
+      const int n_orbs_pt = n_orbs_pts[j];
+      const double energy_pt_dtm = energy_pts_dtm[j];
+      const double energy_pt_stc = energy_pts_stc[i][j].value;
+      const double energy_pt = energy_pt_dtm + energy_pt_stc;
+      const double uncert = energy_pts_stc[i][j].uncertainty;
+      const double energy_corr = energy_var + energy_pt - energy_hf;
+      results_log << str(boost::format("%d, %#.4g, %d, %#.4g, %.15g, %.15g, "
+                                       "%.15g, %.15g, %.15g") %
+                         n_orbs_var % eps_var % n_orbs_pt % eps_pt %
+                         energy_corr % uncert % energy_hf % energy_var %
+                         energy_pt)
+                  << std::endl;
+    }
+  }
+
+  results_log.close();
 }
 
 std::vector<double> SolverImpl::get_energy_pts_dtm(
