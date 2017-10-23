@@ -69,10 +69,13 @@ class SolverImpl : public Solver {
   std::vector<double> get_energy_pts_dtm(
       const std::vector<int>& n_orbs_pts) const;
 
+  std::vector<double> get_energy_pts_pstc(
+      const std::vector<int>& n_orbs_pts) const;
+
   std::vector<std::vector<UncertainResult>> get_energy_pts_stc(
       const std::vector<int>& n_orbs_pts,
       const std::vector<double>& eps_pts,
-      const std::vector<double>& energy_pts_dtm) const;
+      const std::vector<UncertainResult>& energy_pts_pstc) const;
 
   double get_weight(const int i) const;
 };
@@ -285,8 +288,11 @@ void SolverImpl::perturbation(
     var_dets_set.insert(term.det().SerializeAsString());
   }
 
-  // Get Deterministic PT correction.
+  // Get deterministic PT correction.
   const auto& energy_pts_dtm = get_energy_pts_dtm(n_orbs_pts);
+
+  // Get Psuedo deterministic PT correction.
+  const auto& energy_pts_pstc = get_energy_pts_pstc(n_orbs_pts, energy_pts_dtm);
 
   // Check eps_pts validity.
   const int n_eps_pts = eps_pts.size();
@@ -298,7 +304,7 @@ void SolverImpl::perturbation(
 
   // Get Stochastic PT correction.
   const auto& energy_pts_stc =
-      get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
+      get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_pstc);
 
   // Record results.
 }
@@ -426,6 +432,166 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
     }
 
     partial_sums.clear();
+    timer->end();  // Batch.
+  }
+  timer->end();
+
+  parallel->reduce_to_sum(n_pt_dets_dtm);
+
+  // Print total PT dets.
+  if (verbose) {
+    printf("%20s", "# DTM PT dets:");
+    for (int i = 0; i < n_n_orbs_pts; i++) {
+      printf("%'20llu", n_pt_dets_dtm[i]);
+    }
+    printf("\n");
+  }
+
+  return energy_pts_dtm;
+}
+
+std::vector<UncertainResult> SolverImpl::get_energy_pts_pstc(
+    const std::vector<int>& n_orbs_pts,
+    const std::vector<double>& energy_pts_dtm) const {
+  // Cache commonly used variables.
+  const int n_n_orbs_pts = n_orbs_pts.size();
+  const int n_var_dets = var_dets_set.size();
+  const size_t n_batches_pstc_pt = config->get_int("n_batches_pstc_pt");
+  const double eps_pstc_pt = config->get_double("eps_pstc_pt");
+  const double eps_dtm_pt = config->get_double("eps_dtm_pt");
+  std::hash<std::string> string_hasher;
+
+  // Construct partial sums store and pt results store.
+  omp_hash_map<std::string, double> partial_sums;
+  omp_hash_map<std::string, double> partial_sums_dtm;
+  partial_sums.set_max_load_factor(MAX_HASH_LOAD);
+  partial_sums_dtm.set_max_load_factor(MAX_HASH_LOAD);
+  std::vector<UncertainResult> energy_pts_pstc(n_n_orbs_pts);
+  std::vector<unsigned long long> n_pt_dets_pstc(n_n_orbs_pts, 0);
+  std::vector<std::vector<double>> energy_pts_loop(n_n_orbs_pts);
+
+  timer->start(str(boost::format("eps_pstc_pt: %#.4g") % eps_pstc_pt));
+  // Process batch by batch to achieve a larger run in a constrained mem env.
+  for (size_t b = 0; b < n_batches_pstc_pt; b++) {
+    timer->start(
+        str(boost::format("batch (%d/%d)") % (b + 1) % n_batches_pstc_pt));
+
+    partial_sums.clear();
+    partial_sums_dtm.clear();
+    for (int i = 0; i < n_n_orbs_pts; i++) {
+      energy_pts_loop.push_back(0.0);
+    }
+
+    double target_progress = 1.0;
+    timer->start("search");
+#pragma omp parallel for schedule(static, 1)
+    for (int i = 0; i < n_var_dets; i++) {
+      const auto& term = abstract_system->wf->terms(i);
+      const auto& var_det = term.det();
+      const double coef = term.coef();
+
+      // Process only if:
+      // 1. is not a var det, and
+      // 2. belongs to the current proc_id, and
+      // 3. belongs to the current batch.
+      const auto& pt_det_handler = [&](const auto& det_a) {
+        const auto& det_a_code = det_a->SerializeAsString();
+        const size_t det_a_hash = string_hasher(det_a_code);
+        if (var_dets_set.count(det_a_code) == 1) return;
+        if (det_a_hash % n_procs != proc_id) return;
+        if ((det_a_hash / n_procs) % n_pt_batches_dtm != b) return;
+        const double H_ai = abstract_system->hamiltonian(&var_det, det_a);
+        const double partial_sum_term = H_ai * coef;
+        partial_sums.set(
+            det_a_code, [&](double& value) { value += partial_sum_term; }, 0.0);
+        if (std::abs(partial_sum_term) >= eps_dtm_pt) {
+          partial_sums_dtm.set(
+              det_a_code,
+              [&](double& value) { value += partial_sum_term; },
+              0.0);
+        }
+      };
+
+      abstract_system->find_connected_dets(
+          &var_det, eps_pstc_pt / std::abs(coef), pt_det_handler);
+
+      // Report progress. (every time progress reaches 2^n %).
+      const double current_progress = i * 100.0 / n_var_dets;
+      if (target_progress <= current_progress) {
+        if (omp_get_thread_num() == 0) {
+          if (verbose) {
+            printf("Master node PT dets: %'zu\n", partial_sums.get_n_keys());
+          }
+          std::string event =
+              str(boost::format("Progress: %.2f %%") % target_progress);
+          timer->checkpoint(event);
+          target_progress *= 2.0;
+        }
+      }
+    }
+    timer->end();  // Search.
+
+    timer->start("accumulate");
+
+    // For reduction after each batch.
+    std::vector<double> energy_pts_batch(n_n_orbs_pts, 0.0);
+
+    // Avoid contructing new det every time.
+    std::vector<data::Determinant> tmp_dets(n_threads);
+
+    // Apply to each key, value pair:
+    // 1. Calculate the contribution.
+    // 2. For each n_orbs_pt interested:
+    //      If the n_orbs used by the key is less than n_orbs_pt:
+    //        Increase n_pt_dets by one and add contribution to energy_pt.
+    partial_sums.apply([&](const std::string& det_code, const double value) {
+      const int thread_id = omp_get_thread_num();
+      auto& det = tmp_dets[thread_id];
+      det.ParseFromString(det_code);
+      const int n_orbs_used = SpinDetUtil::get_n_orbs_used(det);
+      const double H_aa = abstract_system->hamiltonian(&det, &det);
+      const double value_dtm =
+          partial_sums_dtm.get_copy_or_default(det_code, 0.0);
+      const double contribution =
+          (value * value - value_dtm * value_dtm) / (energy_var - H_aa);
+      for (int i = 0; i < n_n_orbs_pts; i++) {
+        if (n_orbs_used > n_orbs_pts[i]) continue;
+#pragma omp atomic
+        n_pt_dets_pstc[i]++;
+#pragma omp atomic
+        energy_pts_batch[i] += contribution;
+      }
+    });
+
+    // Aggregate the results from each proc.
+    parallel->reduce_to_sum(energy_pts_batch);
+    for (int i = 0; i < n_n_orbs_pts; i++) {
+      energy_pts_dtm[i] += energy_pts_batch[i];
+    }
+
+    timer->end();  // Accumulation.
+
+    // Print batch result and estimated total correction.
+    if (verbose) {
+      printf("%20s", "CUM. energy PT:");
+      for (int i = 0; i < n_n_orbs_pts; i++) {
+        printf("%20.12f", energy_pts_dtm[i]);
+      }
+      printf("\n");
+      printf("%20s", "EST. energy PT:");
+      std::vector<double> energy_est_dtm(n_n_orbs_pts);
+      for (int i = 0; i < n_n_orbs_pts; i++) {
+        energy_est_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
+        printf("%20.12f", energy_est_dtm[i]);
+      }
+      printf("\n");
+      printf("%20s", "EST. COR. PT:");
+      for (int i = 0; i < n_n_orbs_pts; i++) {
+        printf("%20.12f", energy_est_dtm[i] + energy_var - energy_hf);
+      }
+      printf("\n");
+    }
+
     timer->end();  // Batch.
   }
   timer->end();
