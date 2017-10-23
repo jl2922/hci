@@ -406,19 +406,19 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
 
     // Print batch result and estimated total correction.
     if (verbose) {
-      printf("%20s", "CUM. energy PT:");
+      printf("%20s", "CUM. DTM energy PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
         printf("%20.12f", energy_pts_dtm[i]);
       }
       printf("\n");
-      printf("%20s", "EST. energy PT:");
+      printf("%20s", "EST. DTM energy PT:");
       std::vector<double> energy_est_dtm(n_n_orbs_pts);
       for (int i = 0; i < n_n_orbs_pts; i++) {
         energy_est_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
         printf("%20.12f", energy_est_dtm[i]);
       }
       printf("\n");
-      printf("%20s", "EST. COR. PT:");
+      printf("%20s", "EST. CORR. PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
         printf("%20.12f", energy_est_dtm[i] + energy_var - energy_hf);
       }
@@ -453,12 +453,12 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
   // Construct results store.
   std::vector<std::vector<UncertainResult>> energy_pts_stc(n_eps_pts);
-  std::vector<std::vector<std::vector<double>>> energy_pts_loop(n_eps_pts);
+  std::vector<std::vector<std::vector<double>>> energy_pts_loops(n_eps_pts);
   std::vector<omp_hash_map<std::string, double>> partial_sums(n_eps_pts);
   omp_hash_map<std::string, double> partial_sums_dtm;
   for (int i = 0; i < n_eps_pts; i++) {
     energy_pts_stc[i].resize(n_n_orbs_pts);
-    energy_pts_loop[i].resize(n_n_orbs_pts);
+    energy_pts_loops[i].resize(n_n_orbs_pts);
     partial_sums[i].set_max_load_factor(MAX_HASH_LOAD);
   }
   partial_sums_dtm.set_max_load_factor(MAX_HASH_LOAD);
@@ -492,6 +492,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
   const size_t n_batches = config->get_int("n_batches_stc_pt");
   std::hash<std::string> string_hasher;
   std::vector<data::Determinant> tmp_dets(n_threads);
+  const double target_error = config->get_double("target_error");
   while (iteration < max_n_iterations) {
     timer->start(str(boost::format("stc loop: %d") % iteration));
 
@@ -503,11 +504,9 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     stc_pt_sample_dets.clear();
     stc_pt_sample_dets_list.clear();
 
-    // Append loop results store.
-    for (int i = 0; i < n_eps_pts; i++) {
-      for (int j = 0; j < n_n_orbs_pts; j++) {
-        energy_pts_loop[i][j].push_back(0.0);
-      }
+    std::vector<std::vector<double>> energy_pts_loop(n_eps_pts);
+    for (int i = 0; i < n_n_orbs_pts; i++) {
+      energy_pts_loop[i].assign(n_n_orbs_pts, 0.0);
     }
 
     // Generate random samples.
@@ -578,7 +577,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
           for (int j = 0; j < n_n_orbs_pts; j++) {
             if (n_orbs_pts[j] < n_orbs_used) continue;
 #pragma omp atomic
-            energy_pts_loop[i][j][iteration] += contrib_2;
+            energy_pts_loop[i][j] += contrib_2;
           }
         }
       };
@@ -615,40 +614,70 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
               for (int k = 0; k < n_n_orbs_pts; k++) {
                 if (n_orbs_pts[k] < n_orbs_used) continue;
 #pragma omp atomic
-                energy_pts_loop[j][k][iteration] += contrib_1;
+                energy_pts_loop[j][k] += contrib_1;
               }
             }
           });
     }
 
+    // Append loop results store.
+    for (int i = 0; i < n_eps_pts; i++) {
+      parallel->reduce_to_sum(energy_pts_loop[i]);
+      for (int j = 0; j < n_n_orbs_pts; j++) {
+        energy_pts_loops[i][j].push_back(energy_pts_loop[i][j]);
+      }
+    }
+
+    // Calculate statistics.
+    double max_uncert = 0.0;
+    for (int i = 0; i < n_eps_pts; i++) {
+      for (int j = 0; j < n_n_orbs_pts; j++) {
+        const double avg = get_avg(energy_pts_loops[i][j]);
+        const double stdev = get_stdev(energy_pts_loops[i][j]);
+        energy_pts_stc[i][j].value = avg;
+        energy_pts_stc[i][j].uncertainty = stdev / sqrt(iteration);
+        max_uncert = std::max(energy_pts_stc[i][j].uncertainty, max_uncert);
+      }
+    }
+
     // Report results.
     if (verbose) {
       for (int i = 0; i < n_eps_pts; i++) {
-        printf("eps_pt = %#.4g\n", eps_pts[i]);
-        printf("%20s", "loop stc energy PT:");
+        printf("eps_pt = %#.4g:\n", eps_pts[i]);
+        printf("%20s", "Loop STC energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_loop[i][j][iteration]);
+          printf("%20.12f", energy_pts_loops[i][j][iteration]);
         }
         printf("\n");
-        printf("%20s", "EST. stc energy PT:");
+        printf("%20s", "EST. STC energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", get_avg(energy_pts_loop[i][j]));
+          printf("%20.12f", energy_pts_stc[i][j].value);
         }
         printf("\n");
         printf("%20s", "EST. energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", get_avg(energy_pts_loop[i][j]) + energy_pts_dtm[j]);
+          printf("%20.12f", energy_pts_stc[i][j].value + energy_pts_dtm[j]);
         }
         printf("\n");
-        printf("%20s", "STDEV:");
+        printf("%20s", "EST. CORR. energy:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", get_stdev(energy_pts_loop[i][j]) / sqrt(iteration));
+          const double energy_corr = energy_pts_stc[i][j].value +
+                                     energy_pts_dtm[j] + energy_var - energy_hf;
+          printf("%20.12f", energy_corr);
+        }
+        printf("\n");
+        printf("%20s", "Uncertainty:");
+        for (int j = 0; j < n_n_orbs_pts; j++) {
+          printf("%20.12f", energy_pts_stc[i][j].uncertainty);
         }
         printf("\n");
       }
     }
 
     timer->end();
+
+    if (iteration >= 10 && max_uncert <= target_error) break;
+
     iteration++;
   }
 
