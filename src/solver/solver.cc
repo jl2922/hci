@@ -527,7 +527,8 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
     // Search PT dets from selected sample var dets.
     const int n_stc_pt_sample_dets = stc_pt_sample_dets_list.size();
-    for (int s = 0; s < n_stc_pt_sample_dets; i++) {
+#pragma omp parallel for schedule(static, 1)
+    for (int s = 0; s < n_stc_pt_sample_dets; s++) {
       const int var_det_id = stc_pt_sample_dets_list[s];
       const double prob = probs[var_det_id];
       const double cnt = static_cast<double>(stc_pt_sample_dets[var_det_id]);
@@ -576,6 +577,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
           if (std::abs(partial_sum_term) < eps_pts[i]) continue;
           for (int j = 0; j < n_n_orbs_pts; j++) {
             if (n_orbs_pts[j] < n_orbs_used) continue;
+#pragma omp atomic
             energy_pts_loop[i][j][iteration] += contrib_2;
           }
         }
