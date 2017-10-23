@@ -484,6 +484,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
   int iteration = 0;
   const int max_n_iterations = config->get_int("max_n_iterations_stc_pt");
   std::unordered_map<int, int> stc_pt_sample_dets;
+  std::vector<int> stc_pt_sample_dets_list;
   const int n_samples = config->get_int("n_samples_stc_pt");
   srand(time(NULL));
   const double eps_dtm_pt = config->get_double("eps_dtm_pt");
@@ -500,6 +501,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     }
     partial_sums_dtm.clear();
     stc_pt_sample_dets.clear();
+    stc_pt_sample_dets_list.clear();
 
     // Append loop results store.
     for (int i = 0; i < n_eps_pts; i++) {
@@ -514,6 +516,9 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
       const int sample_det_id =
           std::lower_bound(cum_probs.begin(), cum_probs.end(), rand_01) -
           cum_probs.begin();
+      if (stc_pt_sample_dets.count(sample_det_id) == 0) {
+        stc_pt_sample_dets_list.push_back(sample_det_id);
+      }
       stc_pt_sample_dets[sample_det_id]++;
     }
 
@@ -521,10 +526,11 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     const size_t selected_batch = rand() % n_batches;
 
     // Search PT dets from selected sample var dets.
-    for (const auto& kv : stc_pt_sample_dets) {
-      const int var_det_id = kv.first;
+    const int n_stc_pt_sample_dets = stc_pt_sample_dets_list.size();
+    for (int s = 0; s < n_stc_pt_sample_dets; i++) {
+      const int var_det_id = stc_pt_sample_dets_list[s];
       const double prob = probs[var_det_id];
-      const int cnt = kv.second;
+      const double cnt = static_cast<double>(stc_pt_sample_dets[var_det_id]);
       const auto& term = abstract_system->wf->terms(var_det_id);
       const auto& var_det = term.det();
       const double coef = term.coef();
