@@ -525,6 +525,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
   std::hash<std::string> string_hasher;
   std::vector<data::Determinant> tmp_dets(n_threads);
   const double target_error = config->get_double("target_error");
+
   while (iteration < max_n_iterations) {
     timer->start(str(boost::format("stc loop: %d") % iteration));
 
@@ -537,8 +538,8 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     stc_pt_sample_dets_list.clear();
 
     std::vector<std::vector<double>> energy_pts_loop(n_eps_pts);
-    for (int i = 0; i < n_n_orbs_pts; i++) {
-      energy_pts_loop[i].assign(n_n_orbs_pts, 0.0);
+    for (int i = 0; i < n_eps_pts; i++) {
+      energy_pts_loop[i].resize(n_n_orbs_pts, 0.0);
     }
 
     // Generate random samples.
@@ -558,6 +559,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
     // Search PT dets from selected sample var dets.
     const int n_stc_pt_sample_dets = stc_pt_sample_dets_list.size();
+
 #pragma omp parallel for schedule(static, 1)
     for (int s = 0; s < n_stc_pt_sample_dets; s++) {
       const int var_det_id = stc_pt_sample_dets_list[s];
