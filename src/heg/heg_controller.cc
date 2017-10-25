@@ -58,7 +58,7 @@ void HEGControllerImpl::run_all_variations() {
 
   for (int i = 0; i < n_rcut_vars; i++) {
     const double rcut_var = rcut_vars[i];
-    timer->start(str(boost::format("rcut_var: %#.4g") % rcut_var));
+    timer->start(str(boost::format("rcut_var %#.4g") % rcut_var));
 
     timer->start("setup");
     heg_system->setup(rcut_var);
@@ -67,7 +67,7 @@ void HEGControllerImpl::run_all_variations() {
 
     for (int j = 0; j < n_eps_vars; j++) {
       const double eps_var = eps_vars[j];
-      timer->start(str(boost::format("eps_var: %#.4g") % eps_var));
+      timer->start(str(boost::format("eps_var %#.4g") % eps_var));
       const auto& filename =
           str(boost::format("var_%#.4g_%#.4g.dat") % eps_var % rcut_var);
       if (!solver->load_variation_result(filename)) {
@@ -121,11 +121,11 @@ void HEGControllerImpl::run_all_perturbations() {
   for (int i = n_rcut_vars - 1; i >= 0; i--) {
     const double rcut_var = rcut_vars[i];
     const int n_orbs_var = heg_system->get_n_orbitals(rcut_var);
-    timer->start(str(boost::format("rcut_var: %#.4g") % rcut_var));
+    timer->start(str(boost::format("rcut_var %#.4g") % rcut_var));
 
     for (int j = n_eps_vars - 1; j >= 0; j--) {
       const double eps_var = eps_vars[j];
-      timer->start(str(boost::format("eps_var: %#.4g") % eps_var));
+      timer->start(str(boost::format("eps_var %#.4g") % eps_var));
       const auto& filename =
           str(boost::format("var_%#.4g_%#.4g.dat") % eps_var % rcut_var);
       if (!solver->load_variation_result(filename)) {

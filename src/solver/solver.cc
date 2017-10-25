@@ -17,6 +17,9 @@
 #include "spin_det_util.h"
 
 #define ENERGY_FORMAT "%.12f"
+#define TABLE_FORMAT_F "%17.10f"
+#define TABLE_FORMAT_D "%'17d"
+#define TABLE_FORMAT_LL "%'17llu"
 #define MAX_HASH_LOAD 1.618
 #define PT_RESULTS_LOG "pt_results.csv"
 
@@ -153,7 +156,7 @@ void SolverImpl::variation(const double eps_var) {
       std::bind(&SolverImpl::apply_hamiltonian, this, std::placeholders::_1);
 
   while (!converged) {
-    timer->start("var loop: " + std::to_string(iteration));
+    timer->start("loop " + std::to_string(iteration));
 
     // Find new dets.
     n_new_dets = 0;
@@ -323,8 +326,8 @@ void SolverImpl::perturbation(
       const double energy_pt = energy_pt_dtm + energy_pt_stc;
       const double uncert = energy_pts_stc[i][j].uncertainty;
       const double energy_corr = energy_var + energy_pt - energy_hf;
-      results_log << str(boost::format("%d, %#.4g, %d, %#.4g, %.15g, %.15g, "
-                                       "%.15g, %.15g, %.15g") %
+      results_log << str(boost::format("%d, %#.4g, %d, %#.4g, %#.15g, %#.15g, "
+                                       "%#.15g, %#.15g, %#.15g") %
                          n_orbs_var % eps_var % n_orbs_pt % eps_pt %
                          energy_corr % uncert % energy_hf % energy_var %
                          energy_pt)
@@ -350,11 +353,10 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
   std::vector<double> energy_pts_dtm(n_n_orbs_pts, 0.0);
   std::vector<unsigned long long> n_pt_dets_dtm(n_n_orbs_pts, 0);
 
-  timer->start(str(boost::format("eps_dtm_pt: %#.4g") % eps_dtm_pt));
+  timer->start("dtm");
   // Process batch by batch to achieve a larger run in a constrained mem env.
   for (size_t b = 0; b < n_pt_batches_dtm; b++) {
-    timer->start(
-        str(boost::format("batch (%d/%d)") % (b + 1) % n_pt_batches_dtm));
+    timer->start(str(boost::format("%d/%d") % (b + 1) % n_pt_batches_dtm));
 
     double target_progress = 0.25;
     timer->start("search");
@@ -434,33 +436,38 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
       energy_pts_dtm[i] += energy_pts_dtm_batch[i];
     }
 
-    timer->end();  // Accumulation.
-
     // Print batch result and estimated total correction.
     if (verbose) {
+      printf("%20s", "# orbitals PT:");
+      for (int i = 0; i < n_n_orbs_pts; i++) {
+        printf(TABLE_FORMAT_D, n_orbs_pts[i]);
+      }
+      printf("\n");
       printf("%20s", "CUM. DTM energy PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        printf("%20.12f", energy_pts_dtm[i]);
+        printf(TABLE_FORMAT_F, energy_pts_dtm[i]);
       }
       printf("\n");
       printf("%20s", "EST. DTM energy PT:");
       std::vector<double> energy_est_dtm(n_n_orbs_pts);
       for (int i = 0; i < n_n_orbs_pts; i++) {
         energy_est_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
-        printf("%20.12f", energy_est_dtm[i]);
+        printf(TABLE_FORMAT_F, energy_est_dtm[i]);
       }
       printf("\n");
-      printf("%20s", "EST. CORR. PT:");
+      printf("%20s", "EST. CORR. energy:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        printf("%20.12f", energy_est_dtm[i] + energy_var - energy_hf);
+        const double energy_corr = energy_est_dtm[i] + energy_var - energy_hf;
+        printf(TABLE_FORMAT_F, energy_corr);
       }
       printf("\n");
     }
 
+    timer->end();  // Accumulation.
+
     partial_sums.clear();
     timer->end();  // Batch.
   }
-  timer->end();
 
   parallel->reduce_to_sum(n_pt_dets_dtm);
 
@@ -468,10 +475,12 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
   if (verbose) {
     printf("%20s", "# DTM PT dets:");
     for (int i = 0; i < n_n_orbs_pts; i++) {
-      printf("%'20llu", n_pt_dets_dtm[i]);
+      printf(TABLE_FORMAT_LL, n_pt_dets_dtm[i]);
     }
     printf("\n");
   }
+
+  timer->end();
 
   return energy_pts_dtm;
 }
@@ -526,8 +535,9 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
   std::vector<data::Determinant> tmp_dets(n_threads);
   const double target_error = config->get_double("target_error");
 
+  timer->start("stc");
   while (iteration < max_n_iterations) {
-    timer->start(str(boost::format("stc loop: %d") % iteration));
+    timer->start(str(boost::format("loop %d") % iteration));
 
     // Cleanup.
     for (int i = 0; i < n_eps_pts; i++) {
@@ -676,33 +686,39 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
     // Report results.
     if (verbose) {
+      printf("%20s", "# orbitals PT:");
+      for (int j = 0; j < n_n_orbs_pts; j++) {
+        printf(TABLE_FORMAT_D, n_orbs_pts[j]);
+      }
+      printf("\n");
       for (int i = 0; i < n_eps_pts; i++) {
-        printf("eps_pt = %#.4g:\n", eps_pts[i]);
+        printf(">>> eps_stc_pt %#.4g\n", eps_pts[i]);
         printf("%20s", "Loop STC energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_loops[i][j][iteration]);
+          printf(TABLE_FORMAT_F, energy_pts_loops[i][j][iteration]);
         }
         printf("\n");
         printf("%20s", "EST. STC energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_stc[i][j].value);
+          printf(TABLE_FORMAT_F, energy_pts_stc[i][j].value);
         }
         printf("\n");
         printf("%20s", "EST. energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_stc[i][j].value + energy_pts_dtm[j]);
+          printf(
+              TABLE_FORMAT_F, energy_pts_stc[i][j].value + energy_pts_dtm[j]);
         }
         printf("\n");
         printf("%20s", "EST. CORR. energy:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
           const double energy_corr = energy_pts_stc[i][j].value +
                                      energy_pts_dtm[j] + energy_var - energy_hf;
-          printf("%20.12f", energy_corr);
+          printf(TABLE_FORMAT_F, energy_corr);
         }
         printf("\n");
         printf("%20s", "Uncertainty:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
-          printf("%20.12f", energy_pts_stc[i][j].uncertainty);
+          printf(TABLE_FORMAT_F, energy_pts_stc[i][j].uncertainty);
         }
         printf("\n");
       }
@@ -714,6 +730,8 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 
     iteration++;
   }
+
+  timer->end();
 
   return energy_pts_stc;
 }
