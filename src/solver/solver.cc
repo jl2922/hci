@@ -451,7 +451,6 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
       }
       printf("\n");
       printf("%20s", "EST. DTM energy PT:");
-      std::vector<double> energy_est_dtm(n_n_orbs_pts);
       for (int i = 0; i < n_n_orbs_pts; i++) {
         printf(TABLE_FORMAT_F, energy_pts_dtm[i]);
       }
