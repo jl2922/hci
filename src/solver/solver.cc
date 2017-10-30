@@ -433,7 +433,9 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
     // Aggregate the results from each proc.
     parallel->reduce_to_sum(energy_pts_dtm_batch);
     for (int i = 0; i < n_n_orbs_pts; i++) {
-      energy_pts_dtm[i] += energy_pts_dtm_batch[i];
+      const double energy_pt_cum =
+          energy_pts_dtm[i] / n_pt_batches_dtm * b + energy_pts_dtm_batch[i];
+      energy_pts_dtm[i] = energy_pt_cum / (b + 1) * n_pt_batches_dtm;
     }
 
     // Print batch result and estimated total correction.
@@ -443,21 +445,20 @@ std::vector<double> SolverImpl::get_energy_pts_dtm(
         printf(TABLE_FORMAT_D, n_orbs_pts[i]);
       }
       printf("\n");
-      printf("%20s", "CUM. DTM energy PT:");
+      printf("%20s", "Batch DTM energy PT:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        printf(TABLE_FORMAT_F, energy_pts_dtm[i]);
+        printf(TABLE_FORMAT_F, energy_pts_dtm_batch[i]);
       }
       printf("\n");
       printf("%20s", "EST. DTM energy PT:");
       std::vector<double> energy_est_dtm(n_n_orbs_pts);
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        energy_est_dtm[i] = energy_pts_dtm[i] / (b + 1) * n_pt_batches_dtm;
-        printf(TABLE_FORMAT_F, energy_est_dtm[i]);
+        printf(TABLE_FORMAT_F, energy_pts_dtm[i]);
       }
       printf("\n");
       printf("%20s", "EST. CORR. energy:");
       for (int i = 0; i < n_n_orbs_pts; i++) {
-        const double energy_corr = energy_est_dtm[i] + energy_var - energy_hf;
+        const double energy_corr = energy_pts_dtm[i] + energy_var - energy_hf;
         printf(TABLE_FORMAT_F, energy_corr);
       }
       printf("\n");
