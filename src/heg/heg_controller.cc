@@ -1,8 +1,10 @@
 #include "heg_controller.h"
 
 #include <boost/format.hpp>
+#include <chrono>
 #include <exception>
 #include <memory>
+#include <thread>
 #include "../injector.h"
 
 class HEGControllerImpl : public HEGController {
@@ -37,6 +39,7 @@ void HEGControllerImpl::run() {
 
   if (session->get_config()->get_bool("variation_only")) return;
 
+  std::this_thread::sleep_for(std::chrono::seconds(3));
   run_all_perturbations();
 }
 

@@ -220,7 +220,6 @@ void SolverImpl::save_variation_result(const std::string& filename) {
   if (verbose) {
     printf("Saved to: %s\n", filename.c_str());
   }
-  session->get_timer()->sleep(3);  // For data consistence on disk.
 }
 
 bool SolverImpl::load_variation_result(const std::string& filename) {
