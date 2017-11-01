@@ -47,7 +47,7 @@ class SolverImpl : public Solver {
   bool load_variation_result(const std::string& filename) override;
 
   std::vector<double> apply_hamiltonian(
-      const std::vector<double>& vec) override;
+      const std::vector<double>& vec, const bool print_progress) override;
 
   void perturbation(
       const int n_orbs_var,
@@ -152,8 +152,11 @@ void SolverImpl::variation(const double eps_var) {
       };
 
   // Apply hamiltonian to a vec (with partially cached hamiltonian).
-  const auto& apply_hamiltonian_func =
-      std::bind(&SolverImpl::apply_hamiltonian, this, std::placeholders::_1);
+  const auto& apply_hamiltonian_func = std::bind(
+      &SolverImpl::apply_hamiltonian,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2);
 
   while (!converged) {
     timer->start("loop " + std::to_string(iteration));
@@ -180,6 +183,7 @@ void SolverImpl::variation(const double eps_var) {
 
     // Diagonalize.
     connections->update();
+    timer->checkpoint("updated helpers");
     std::vector<double> diagonal(n_total_dets, 0.0);
     for (int i = 0; i < n_total_dets; i++) {
       const auto& det_i = wf->terms(i).det();
@@ -243,17 +247,22 @@ void SolverImpl::print_var_result() const {
   printf("Number of dets: %'d\n", abstract_system->wf->terms_size());
   printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var);
   const double energy_corr = energy_var - energy_hf;
-  printf("Correlation energy (var): " ENERGY_FORMAT " Ha\n", energy_corr);
+  printf("Correlation energy (variation): " ENERGY_FORMAT " Ha\n", energy_corr);
 }
 
 std::vector<double> SolverImpl::apply_hamiltonian(
-    const std::vector<double>& vec) {
+    const std::vector<double>& vec, const bool print_progress) {
   const int n_dets = vec.size();
   Parallel* const parallel = session->get_parallel();
   const int proc_id = parallel->get_proc_id();
   const int n_procs = parallel->get_n_procs();
   std::vector<double> res(n_dets, 0.0);
 
+  double target_progress = 0.01;
+  if (verbose && print_progress) {
+    printf("Applying hamiltonian: ");
+    fflush(stdout);
+  }
 #pragma omp parallel for reduction(vec_double_plus : res) schedule(dynamic, 10)
   for (int i = proc_id; i < n_dets; i += n_procs) {
     const auto& conns = connections->get_connections(i);
@@ -265,7 +274,15 @@ std::vector<double> SolverImpl::apply_hamiltonian(
         res[j] += H_ij * vec[i];
       }
     }
+    if (verbose && print_progress && omp_get_thread_num() == 0) {
+      if (i > target_progress * n_dets) {
+        printf("%.0f%% ", target_progress * 100);
+        fflush(stdout);
+        target_progress *= 2;
+      }
+    }
   }
+  if (verbose && print_progress) printf("\n");
 
   parallel->reduce_to_sum(res);
   session->get_timer()->checkpoint("hamiltonian applied");

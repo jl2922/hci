@@ -7,8 +7,8 @@
 std::pair<double, std::vector<double>> DavidsonUtil::diagonalize(
     const std::vector<double>& initial_vector,
     const std::vector<double>& diagonal,
-    const std::function<std::vector<double>(const std::vector<double>&)>&
-        apply_hamiltonian,
+    const std::function<std::vector<double>(
+        const std::vector<double>&, const bool)>& apply_hamiltonian,
     const int max_iterations_in,
     const bool verbose) {
   const double TOLERANCE = 1.0e-10;
@@ -50,7 +50,7 @@ std::pair<double, std::vector<double>> DavidsonUtil::diagonalize(
 
   // First iteration.
   for (int i = 0; i < n_dets; i++) tmp_v[i] = v(i, 0);
-  const auto& tmp_Hv = apply_hamiltonian(tmp_v);
+  const auto& tmp_Hv = apply_hamiltonian(tmp_v, true);
   for (int i = 0; i < n_dets; i++) Hv(i, 0) = tmp_Hv[i];
   lowest_eigenvalue = v.col(0).dot(Hv.col(0));
   h_krylov(0, 0) = lowest_eigenvalue;
@@ -82,7 +82,7 @@ std::pair<double, std::vector<double>> DavidsonUtil::diagonalize(
 
     // Apply H once.
     for (int i = 0; i < n_dets; i++) tmp_v[i] = v(i, it);
-    const auto& tmp_Hv2 = apply_hamiltonian(tmp_v);
+    const auto& tmp_Hv2 = apply_hamiltonian(tmp_v, false);
     for (int i = 0; i < n_dets; i++) Hv(i, it) = tmp_Hv2[i];
 
     // Construct subspace matrix.
