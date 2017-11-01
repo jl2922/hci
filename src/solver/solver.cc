@@ -247,7 +247,7 @@ void SolverImpl::print_var_result() const {
   printf("Number of dets: %'d\n", abstract_system->wf->terms_size());
   printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var);
   const double energy_corr = energy_var - energy_hf;
-  printf("Correlation energy (var): " ENERGY_FORMAT " Ha\n", energy_corr);
+  printf("Correlation energy (variation): " ENERGY_FORMAT " Ha\n", energy_corr);
 }
 
 std::vector<double> SolverImpl::apply_hamiltonian(
