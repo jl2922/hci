@@ -40,7 +40,10 @@ TEST(DavidsonTest, HilbertSystem) {
   }
 
   const auto& apply_hamiltonian = std::bind(
-      &HilbertSystem::apply_hamiltonian, &hamiltonian, std::placeholders::_1);
+      &HilbertSystem::apply_hamiltonian,
+      &hamiltonian,
+      std::placeholders::_1,
+      std::placeholders::_2);
 
   const std::vector<double> expected_eigenvalues(
       {-1.00956719, -0.3518051, -0.23097854, -0.17336724, -0.13218651});
