@@ -12,7 +12,8 @@ class HilbertSystem {
     return -1.0 / GAMMA / (i + j + 1);
   }
 
-  std::vector<double> apply_hamiltonian(const std::vector<double>& v) {
+  std::vector<double> apply_hamiltonian(
+      const std::vector<double>& v, const bool print_progress) {
     std::vector<double> Hv(n, 0.0);
     for (int i = 0; i < n; i++) {
       Hv[i] += get_hamiltonian(i, i) * v[i];
@@ -22,6 +23,7 @@ class HilbertSystem {
         Hv[j] += h_ij * v[i];
       }
     }
+    (void)print_progress;
     return Hv;
   }
 
