@@ -378,7 +378,8 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
   const double target_error = config->get_double("target_error");
   std::vector<data::Determinant> tmp_dets(n_threads);
 
-  timer->start("pre dtm");
+  timer->start("pre_dtm");
+  if (verbose) printf(">>> eps_pre_dtm_pt %#.4g\n", eps_pre_dtm_pt);
   timer->start("search");
   double target_progress = 0.25;
 #pragma omp parallel for schedule(static, 1)
@@ -463,6 +464,7 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
   timer->end();  // pre dtm.
 
   timer->start("dtm");
+  if (verbose) printf(">>> eps_dtm_pt %#.4g\n", eps_dtm_pt);
   // Process batch by batch to achieve a larger run in a constrained mem env.
   for (size_t b = 0; b < n_pt_batches_dtm; b++) {
     timer->start(str(boost::format("%d/%d") % (b + 1) % n_pt_batches_dtm));
@@ -606,7 +608,7 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
     partial_sums_pre.clear();
     timer->end();  // Batch.
 
-    if (b > 0 && b < n_pt_batches_dtm - 1 && max_uncert < 0.2 * target_error) {
+    if (b > 0 && b < n_pt_batches_dtm - 2 && max_uncert < 0.2 * target_error) {
       if (verbose) {
         printf(
             "\n>>> Skip remaining batches since uncertainty is significantly "
