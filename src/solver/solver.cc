@@ -507,8 +507,8 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
     if (b > 0 && b < n_pt_batches_dtm - 1 && max_uncert < 0.2 * target_error) {
       if (verbose) {
         printf(
-            "\nSignificantly smaller than target error.\n"
-            "Skip remaining batches\n");
+            "\n>>> Skip remaining batches since uncertainty is significantly "
+            "smaller than target error.\n");
       }
       break;
     }
