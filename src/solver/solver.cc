@@ -12,7 +12,6 @@
 #include "../omp_hash_map/src/omp_hash_map.h"
 #include "../omp_hash_map/src/reducer.h"
 #include "../vector_stats.h"
-#include "connections.h"
 #include "davidson_util.h"
 #include "spin_det_util.h"
 
