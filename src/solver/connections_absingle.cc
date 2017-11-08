@@ -11,9 +11,9 @@
 #include "omp.h"
 #include "spin_det_util.h"
 
-class ConnectionsImpl : public Connections {
+class ConnectionsABSinglesImpl : public Connections {
  public:
-  ConnectionsImpl(
+  ConnectionsABSinglesImpl(
       Session* const session, AbstractSystem* const abstract_system);
 
   void update() override;
@@ -66,12 +66,12 @@ class ConnectionsImpl : public Connections {
       ab_to_det;
 };
 
-constexpr uint8_t ConnectionsImpl::NOT_CACHED;
-constexpr uint8_t ConnectionsImpl::CACHED;
-constexpr uint8_t ConnectionsImpl::CACHE_OUTDATED;
-constexpr uint8_t ConnectionsImpl::CACHE_LIMIT_EXCEEDED;
+constexpr uint8_t ConnectionsABSinglesImpl::NOT_CACHED;
+constexpr uint8_t ConnectionsABSinglesImpl::CACHED;
+constexpr uint8_t ConnectionsABSinglesImpl::CACHE_OUTDATED;
+constexpr uint8_t ConnectionsABSinglesImpl::CACHE_LIMIT_EXCEEDED;
 
-ConnectionsImpl::ConnectionsImpl(
+ConnectionsABSinglesImpl::ConnectionsABSinglesImpl(
     Session* const session, AbstractSystem* const abstract_system)
     : Connections(session, abstract_system) {
   verbose = session->get_parallel()->is_master();
@@ -83,7 +83,7 @@ ConnectionsImpl::ConnectionsImpl(
   n_dets_prev = 0;
 }
 
-void ConnectionsImpl::clear() {
+void ConnectionsABSinglesImpl::clear() {
   n_dets = 0;
   n_dets_prev = 0;
   cache_status.clear();
@@ -98,7 +98,7 @@ void ConnectionsImpl::clear() {
   ab_to_det.clear();
 }
 
-void ConnectionsImpl::update() {
+void ConnectionsABSinglesImpl::update() {
   n_dets_prev = n_dets;
   n_dets = abstract_system->wf->terms_size();
   if (n_dets_prev == n_dets) return;
@@ -180,7 +180,7 @@ void ConnectionsImpl::update() {
   }
 }
 
-std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
+std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
     const int i) {
   if (cache_status[i] == CACHED) {
     return cached_connections[i];
@@ -242,6 +242,7 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
       const auto& candidate = std::make_pair(single_alpha_id, single_beta_id);
       if (ab_to_det.count(candidate) == 1) {
         const int det_id = ab_to_det[candidate];
+        if (det_id < start_id) continue;
         const auto& det_id_det = abstract_system->wf->terms(det_id).det();
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
@@ -265,5 +266,5 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
 
 Connections* Injector::new_connections(
     Session* const session, AbstractSystem* const abstract_system) {
-  return new ConnectionsImpl(session, abstract_system);
+  return new ConnectionsABSinglesImpl(session, abstract_system);
 }
