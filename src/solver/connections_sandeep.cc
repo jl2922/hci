@@ -5,15 +5,17 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "../injector.h"
 #include "omp.h"
 #include "spin_det_util.h"
 
-class ConnectionsABSinglesImpl : public Connections {
+class ConnectionsSandeepImpl : public Connections {
  public:
-  ConnectionsABSinglesImpl(
+  ConnectionsSandeepImpl(
       Session* const session, AbstractSystem* const abstract_system);
 
   void update() override;
@@ -58,20 +60,23 @@ class ConnectionsABSinglesImpl : public Connections {
 
   std::unordered_map<int, std::vector<int>> singles_from_beta;
 
+  std::unordered_map<int, std::vector<int>> alpha_major_to_beta;
+
   std::unordered_map<int, std::vector<int>> alpha_major_to_det;
+
+  std::unordered_map<int, std::vector<int>> beta_major_to_alpha;
 
   std::unordered_map<int, std::vector<int>> beta_major_to_det;
 
-  std::unordered_map<std::pair<int, int>, int, boost::hash<std::pair<int, int>>>
-      ab_to_det;
+  void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
 };
 
-constexpr uint8_t ConnectionsABSinglesImpl::NOT_CACHED;
-constexpr uint8_t ConnectionsABSinglesImpl::CACHED;
-constexpr uint8_t ConnectionsABSinglesImpl::CACHE_OUTDATED;
-constexpr uint8_t ConnectionsABSinglesImpl::CACHE_LIMIT_EXCEEDED;
+constexpr uint8_t ConnectionsSandeepImpl::NOT_CACHED;
+constexpr uint8_t ConnectionsSandeepImpl::CACHED;
+constexpr uint8_t ConnectionsSandeepImpl::CACHE_OUTDATED;
+constexpr uint8_t ConnectionsSandeepImpl::CACHE_LIMIT_EXCEEDED;
 
-ConnectionsABSinglesImpl::ConnectionsABSinglesImpl(
+ConnectionsSandeepImpl::ConnectionsSandeepImpl(
     Session* const session, AbstractSystem* const abstract_system)
     : Connections(session, abstract_system) {
   verbose = session->get_parallel()->is_master();
@@ -83,7 +88,7 @@ ConnectionsABSinglesImpl::ConnectionsABSinglesImpl(
   n_dets_prev = 0;
 }
 
-void ConnectionsABSinglesImpl::clear() {
+void ConnectionsSandeepImpl::clear() {
   n_dets = 0;
   n_dets_prev = 0;
   cache_status.clear();
@@ -93,15 +98,19 @@ void ConnectionsABSinglesImpl::clear() {
   unique_ab_m1.clear();
   singles_from_alpha.clear();
   singles_from_beta.clear();
+  alpha_major_to_beta.clear();
   alpha_major_to_det.clear();
+  beta_major_to_alpha.clear();
   beta_major_to_det.clear();
-  ab_to_det.clear();
 }
 
-void ConnectionsABSinglesImpl::update() {
+void ConnectionsSandeepImpl::update() {
   n_dets_prev = n_dets;
   n_dets = abstract_system->wf->terms_size();
   if (n_dets_prev == n_dets) return;
+
+  std::unordered_set<int> changed_alphas;
+  std::unordered_set<int> changed_betas;
 
   for (int i = n_dets_prev; i < n_dets; i++) {
     const auto& det = abstract_system->wf->terms(i).det();
@@ -167,9 +176,25 @@ void ConnectionsABSinglesImpl::update() {
       }
     }
 
+    alpha_major_to_beta[alpha_id].push_back(beta_id);
     alpha_major_to_det[alpha_id].push_back(i);
+    beta_major_to_alpha[beta_id].push_back(alpha_id);
     beta_major_to_det[beta_id].push_back(i);
-    ab_to_det[std::make_pair(alpha_id, beta_id)] = i;
+
+    if (changed_alphas.count(alpha_id) == 0) {
+      changed_alphas.insert(alpha_id);
+    }
+
+    if (changed_betas.count(beta_id) == 0) {
+      changed_betas.insert(beta_id);
+    }
+  }
+
+  for (const int alpha_id : changed_alphas) {
+    sort_by_first(alpha_major_to_beta[alpha_id], alpha_major_to_det[alpha_id]);
+  }
+  for (const int beta_id : changed_betas) {
+    sort_by_first(beta_major_to_alpha[beta_id], beta_major_to_det[beta_id]);
   }
 
   // Cache.
@@ -180,7 +205,23 @@ void ConnectionsABSinglesImpl::update() {
   }
 }
 
-std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
+void ConnectionsSandeepImpl::sort_by_first(
+    std::vector<int>& vec1, std::vector<int>& vec2) {
+  std::vector<std::pair<int, int>> vec;
+  const int n_vec = vec1.size();
+  for (int i = 0; i < n_vec; i++) {
+    vec.push_back(std::make_pair(vec1[i], vec2[i]));
+  }
+  std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+    return a.first < b.first;
+  });
+  for (int i = 0; i < n_vec; i++) {
+    vec1[i] = vec[i].first;
+    vec2[i] = vec[i].second;
+  }
+}
+
+std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
     const int i) {
   if (cache_status[i] == CACHED) {
     return cached_connections[i];
@@ -237,11 +278,21 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
   const auto& one_dns = singles_from_beta[beta_id];
   for (auto it_up = one_ups.begin(); it_up != one_ups.end(); it_up++) {
     const int single_alpha_id = *it_up;
+    const auto& connected_beta_ids = alpha_major_to_beta[single_alpha_id];
+    const auto& connected_det_ids = alpha_major_to_det[single_alpha_id];
+    const int n_connected_betas = connected_beta_ids.size();
+    int ptr = 0;
     for (auto it_dn = one_dns.begin(); it_dn != one_dns.end(); it_dn++) {
       const int single_beta_id = *it_dn;
-      const auto& candidate = std::make_pair(single_alpha_id, single_beta_id);
-      if (ab_to_det.count(candidate) == 1) {
-        const int det_id = ab_to_det[candidate];
+
+      while (ptr < n_connected_betas &&
+             connected_beta_ids[ptr] < single_beta_id) {
+        ptr++;
+      }
+      if (ptr == n_connected_betas) break;
+
+      if (connected_beta_ids[ptr] == single_beta_id) {
+        const int det_id = connected_det_ids[ptr];
         if (det_id < start_id) continue;
         const auto& det_id_det = abstract_system->wf->terms(det_id).det();
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
@@ -266,5 +317,5 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
 
 // Connections* Injector::new_connections(
 //     Session* const session, AbstractSystem* const abstract_system) {
-//   return new ConnectionsABSinglesImpl(session, abstract_system);
+//   return new ConnectionsSandeepImpl(session, abstract_system);
 // }
