@@ -250,7 +250,7 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
   return res;
 };
 
-Connections* Injector::new_connections(
-    Session* const session, AbstractSystem* const abstract_system) {
-  return new ConnectionsImpl(session, abstract_system);
-}
+// Connections* Injector::new_connections(
+//     Session* const session, AbstractSystem* const abstract_system) {
+//   return new ConnectionsImpl(session, abstract_system);
+// }
