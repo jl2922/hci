@@ -247,8 +247,10 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
         res.push_back(std::make_pair(det_id, H));
+        // printf("%d %d %.12f\n", i, det_id, H);
       }
     }
+    // exit(0);
   }
 
   // Cache if within threshold.
@@ -264,7 +266,7 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
   return res;
 }
 
-// Connections* Injector::new_connections(
-//     Session* const session, AbstractSystem* const abstract_system) {
-//   return new ConnectionsABSinglesImpl(session, abstract_system);
-// }
+ Connections* Injector::new_connections(
+     Session* const session, AbstractSystem* const abstract_system) {
+   return new ConnectionsABSinglesImpl(session, abstract_system);
+ }
