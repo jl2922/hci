@@ -5,6 +5,8 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "../injector.h"
@@ -62,8 +64,7 @@ class ConnectionsABSinglesImpl : public Connections {
 
   std::unordered_map<int, std::vector<int>> beta_major_to_det;
 
-  std::unordered_map<std::pair<int, int>, int, boost::hash<std::pair<int, int>>>
-      ab_to_det;
+  std::vector<std::vector<bool>> one_up;
 };
 
 constexpr uint8_t ConnectionsABSinglesImpl::NOT_CACHED;
@@ -81,6 +82,7 @@ ConnectionsABSinglesImpl::ConnectionsABSinglesImpl(
   cache_size = config->get_int("cache_size");
   n_dets = 0;
   n_dets_prev = 0;
+  one_up.resize(omp_get_max_threads());
 }
 
 void ConnectionsABSinglesImpl::clear() {
@@ -95,7 +97,7 @@ void ConnectionsABSinglesImpl::clear() {
   singles_from_beta.clear();
   alpha_major_to_det.clear();
   beta_major_to_det.clear();
-  ab_to_det.clear();
+  one_up.clear();
 }
 
 void ConnectionsABSinglesImpl::update() {
@@ -121,13 +123,14 @@ void ConnectionsABSinglesImpl::update() {
       // Setup connections.
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
       data::SpinDeterminant det_up(det.up());
+      std::unordered_set<int> alpha_singles_set;
       for (int j = 0; j < n_up; j++) {
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
         const auto& alpha_m1 = det_up.SerializeAsString();
         for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
-          if (singles_from_alpha[alpha_id].empty() ||
-              singles_from_alpha[alpha_id].back() != alpha_single) {
+          if (alpha_singles_set.count(alpha_single) == 0) {
             singles_from_alpha[alpha_id].push_back(alpha_single);
+            alpha_singles_set.insert(alpha_single);
           }
           if (singles_from_alpha[alpha_single].empty() ||
               singles_from_alpha[alpha_single].back() != alpha_id) {
@@ -149,13 +152,14 @@ void ConnectionsABSinglesImpl::update() {
       // Setup connections.
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
       data::SpinDeterminant det_dn(det.dn());
+      std::unordered_set<int> single_betas_set;
       for (int j = 0; j < n_dn; j++) {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
         for (const int beta_single : unique_ab_m1[beta_m1].second) {
-          if (singles_from_beta[beta_id].empty() ||
-              singles_from_beta[beta_id].back() != beta_single) {
+          if (single_betas_set.count(beta_single) == 0) {
             singles_from_beta[beta_id].push_back(beta_single);
+            single_betas_set.insert(beta_single);
           }
           if (singles_from_beta[beta_single].empty() ||
               singles_from_beta[beta_single].back() != beta_id) {
@@ -169,7 +173,13 @@ void ConnectionsABSinglesImpl::update() {
 
     alpha_major_to_det[alpha_id].push_back(i);
     beta_major_to_det[beta_id].push_back(i);
-    ab_to_det[std::make_pair(alpha_id, beta_id)] = i;
+  }
+
+#pragma omp parallel
+  {
+    // Connected and one up arrays.
+    const int thread_id = omp_get_thread_num();
+    one_up[thread_id].assign(n_dets, false);
   }
 
   // Cache.
@@ -194,6 +204,7 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
   }
 
   const auto& det = abstract_system->wf->terms(i).det();
+  const int thread_id = omp_get_thread_num();
 
   // Diagonal.
   if (cache_status[i] != CACHE_OUTDATED) {
@@ -233,25 +244,38 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
   }
 
   // One up one down exciation.
-  const auto& one_ups = singles_from_alpha[alpha_id];
-  const auto& one_dns = singles_from_beta[beta_id];
-  for (auto it_up = one_ups.begin(); it_up != one_ups.end(); it_up++) {
-    const int single_alpha_id = *it_up;
-    for (auto it_dn = one_dns.begin(); it_dn != one_dns.end(); it_dn++) {
-      const int single_beta_id = *it_dn;
-      const auto& candidate = std::make_pair(single_alpha_id, single_beta_id);
-      if (ab_to_det.count(candidate) == 1) {
-        const int det_id = ab_to_det[candidate];
-        if (det_id < start_id) continue;
+  std::vector<int> one_ups;
+  const auto& single_alphas = singles_from_alpha[alpha_id];
+  for (auto it = single_alphas.begin(); it != single_alphas.end(); it++) {
+    const int single_alpha_id = *it;
+    const auto& alpha_dets = alpha_major_to_det[single_alpha_id];
+
+    const auto& start_it =
+        std::lower_bound(alpha_dets.begin(), alpha_dets.end(), start_id);
+    for (auto it_det = start_it; it_det < alpha_dets.end(); it_det++) {
+      const int det_id = *it_det;
+      one_up[thread_id][det_id] = true;
+      one_ups.push_back(det_id);
+    }
+  }
+  const auto& single_betas = singles_from_beta[beta_id];
+  for (auto it = single_betas.begin(); it != single_betas.end(); it++) {
+    const int single_beta_id = *it;
+    const auto& beta_dets = beta_major_to_det[single_beta_id];
+
+    const auto& start_it =
+        std::lower_bound(beta_dets.begin(), beta_dets.end(), start_id);
+    for (auto it_det = start_it; it_det < beta_dets.end(); it_det++) {
+      const int det_id = *it_det;
+      if (one_up[thread_id][det_id]) {
         const auto& det_id_det = abstract_system->wf->terms(det_id).det();
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
         res.push_back(std::make_pair(det_id, H));
-        // printf("%d %d %.12f\n", i, det_id, H);
       }
     }
-    // exit(0);
   }
+  for (const size_t det_id : one_ups) one_up[thread_id][det_id] = false;
 
   // Cache if within threshold.
   const int n_connections = res.size();
@@ -266,7 +290,7 @@ std::vector<std::pair<int, double>> ConnectionsABSinglesImpl::get_connections(
   return res;
 }
 
-//  Connections* Injector::new_connections(
-//      Session* const session, AbstractSystem* const abstract_system) {
-//    return new ConnectionsABSinglesImpl(session, abstract_system);
-//  }
+// Connections* Injector::new_connections(
+//     Session* const session, AbstractSystem* const abstract_system) {
+//   return new ConnectionsABSinglesImpl(session, abstract_system);
+// }
