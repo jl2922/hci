@@ -258,8 +258,8 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   const auto& beta = det.dn().SerializeAsString();
   const int beta_id = unique_betas[beta];
   const auto& two_ups = beta_major_to_det[beta_id];
-  const auto& start_it_two_ups =
-      std::lower_bound(two_ups.begin(), two_ups.end(), start_id);
+  // const auto& start_it_two_ups =
+  //     std::lower_bound(two_ups.begin(), two_ups.end(), start_id);
   // for (auto it = start_it_two_ups; it != two_ups.end(); it++) {
   for (auto it = two_ups.begin(); it != two_ups.end(); it++) {
     const int det_id = *it;
@@ -274,8 +274,8 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   const auto& alpha = det.up().SerializeAsString();
   const int alpha_id = unique_alphas[alpha];
   const auto& two_dns = alpha_major_to_det[alpha_id];
-  const auto& start_it_two_dns =
-      std::lower_bound(two_dns.begin(), two_dns.end(), start_id);
+  // const auto& start_it_two_dns =
+  //     std::lower_bound(two_dns.begin(), two_dns.end(), start_id);
   // for (auto it = start_it_two_dns; it != two_dns.end(); it++) {
   for (auto it = two_dns.begin(); it != two_dns.end(); it++) {
     const int det_id = *it;
