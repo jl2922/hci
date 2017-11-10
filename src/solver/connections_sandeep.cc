@@ -130,13 +130,14 @@ void ConnectionsSandeepImpl::update() {
       // Setup connections.
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
       data::SpinDeterminant det_up(det.up());
+      std::unordered_set<int> alpha_singles_set;
       for (int j = 0; j < n_up; j++) {
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
         const auto& alpha_m1 = det_up.SerializeAsString();
         for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
-          if (singles_from_alpha[alpha_id].empty() ||
-              singles_from_alpha[alpha_id].back() != alpha_single) {
+          if (alpha_singles_set.count(alpha_single) == 0) {
             singles_from_alpha[alpha_id].push_back(alpha_single);
+            alpha_singles_set.insert(alpha_single);
           }
           if (singles_from_alpha[alpha_single].empty() ||
               singles_from_alpha[alpha_single].back() != alpha_id) {
@@ -146,6 +147,9 @@ void ConnectionsSandeepImpl::update() {
         unique_ab_m1[alpha_m1].first.push_back(alpha_id);
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
       }
+      std::sort(
+          singles_from_alpha[alpha_id].begin(),
+          singles_from_alpha[alpha_id].end());
     }
 
     // Process beta.
@@ -158,13 +162,14 @@ void ConnectionsSandeepImpl::update() {
       // Setup connections.
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
       data::SpinDeterminant det_dn(det.dn());
+      std::unordered_set<int> single_betas_set;
       for (int j = 0; j < n_dn; j++) {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
         for (const int beta_single : unique_ab_m1[beta_m1].second) {
-          if (singles_from_beta[beta_id].empty() ||
-              singles_from_beta[beta_id].back() != beta_single) {
+          if (single_betas_set.count(beta_single) == 0) {
             singles_from_beta[beta_id].push_back(beta_single);
+            single_betas_set.insert(beta_single);
           }
           if (singles_from_beta[beta_single].empty() ||
               singles_from_beta[beta_single].back() != beta_id) {
@@ -174,12 +179,16 @@ void ConnectionsSandeepImpl::update() {
         unique_ab_m1[beta_m1].second.push_back(beta_id);
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
       }
+      std::sort(
+          singles_from_beta[beta_id].begin(), singles_from_beta[beta_id].end());
     }
 
     alpha_major_to_beta[alpha_id].push_back(beta_id);
     alpha_major_to_det[alpha_id].push_back(i);
     beta_major_to_alpha[beta_id].push_back(alpha_id);
     beta_major_to_det[beta_id].push_back(i);
+
+    // printf("i:%d ai:%d bi:%d\n", i, alpha_id, beta_id);
 
     if (changed_alphas.count(alpha_id) == 0) {
       changed_alphas.insert(alpha_id);
@@ -212,7 +221,7 @@ void ConnectionsSandeepImpl::sort_by_first(
   for (int i = 0; i < n_vec; i++) {
     vec.push_back(std::make_pair(vec1[i], vec2[i]));
   }
-  std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+  std::sort(vec.begin(), vec.end(), [&](const auto& a, const auto& b) {
     return a.first < b.first;
   });
   for (int i = 0; i < n_vec; i++) {
@@ -251,8 +260,10 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   const auto& two_ups = beta_major_to_det[beta_id];
   const auto& start_it_two_ups =
       std::lower_bound(two_ups.begin(), two_ups.end(), start_id);
-  for (auto it = start_it_two_ups; it != two_ups.end(); it++) {
+  // for (auto it = start_it_two_ups; it != two_ups.end(); it++) {
+  for (auto it = two_ups.begin(); it != two_ups.end(); it++) {
     const int det_id = *it;
+    if (det_id < start_id) continue;
     const auto& det_id_det = abstract_system->wf->terms(det_id).det();
     const double H = abstract_system->hamiltonian(&det, &det_id_det);
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
@@ -265,8 +276,10 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   const auto& two_dns = alpha_major_to_det[alpha_id];
   const auto& start_it_two_dns =
       std::lower_bound(two_dns.begin(), two_dns.end(), start_id);
-  for (auto it = start_it_two_dns; it != two_dns.end(); it++) {
+  // for (auto it = start_it_two_dns; it != two_dns.end(); it++) {
+  for (auto it = two_dns.begin(); it != two_dns.end(); it++) {
     const int det_id = *it;
+    if (det_id < start_id) continue;
     const auto& det_id_det = abstract_system->wf->terms(det_id).det();
     const double H = abstract_system->hamiltonian(&det, &det_id_det);
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
@@ -298,6 +311,7 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
         res.push_back(std::make_pair(det_id, H));
+        // printf("%d %d %.12f\n", i, det_id, H);
       }
     }
   }
@@ -315,7 +329,7 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   return res;
 }
 
-// Connections* Injector::new_connections(
-//     Session* const session, AbstractSystem* const abstract_system) {
-//   return new ConnectionsSandeepImpl(session, abstract_system);
-// }
+Connections* Injector::new_connections(
+    Session* const session, AbstractSystem* const abstract_system) {
+  return new ConnectionsSandeepImpl(session, abstract_system);
+}
