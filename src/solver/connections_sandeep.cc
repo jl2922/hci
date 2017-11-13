@@ -392,8 +392,8 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
       if (ptr == n_connected_betas) break;
 
       if (connected_beta_ids[ptr] == single_beta_id) {
-        ptr++;
         const int det_id = connected_det_ids[ptr];
+        ptr++;
         if (det_id < start_id) continue;
         const auto& det_id_det = abstract_system->wf->terms(det_id).det();
         const double H = abstract_system->hamiltonian(&det, &det_id_det);

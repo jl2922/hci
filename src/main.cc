@@ -1,4 +1,5 @@
 #include <clocale>
+#include <cstdlib>
 #include "data.pb.h"
 #include "injector.h"
 
@@ -39,6 +40,8 @@ int main(int argc, char** argv) {
   delete session;
 
   google::protobuf::ShutdownProtobufLibrary();
+
+  std::system("touch finish.log");
 
   return 0;
 }
