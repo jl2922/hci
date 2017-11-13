@@ -33,7 +33,9 @@ class ConnectionsSandeepImpl : public Connections {
 
   int n_dn = 0;
 
-  int cache_size = 0;
+  size_t cache_size = 0;
+
+  size_t singles_cache_size = 0;
 
   std::vector<std::vector<std::pair<int, double>>> cached_connections;
 
@@ -43,7 +45,7 @@ class ConnectionsSandeepImpl : public Connections {
 
   static constexpr uint8_t CACHE_OUTDATED = 2;
 
-  static constexpr uint8_t CACHE_LIMIT_EXCEEDED = 3;
+  static constexpr uint8_t CACHE_OVERFLOW = 3;
 
   std::vector<uint8_t> cache_status;
 
@@ -60,6 +62,10 @@ class ConnectionsSandeepImpl : public Connections {
 
   std::unordered_map<int, std::vector<int>> singles_from_beta;
 
+  std::vector<uint8_t> singles_alpha_cache_status;
+
+  std::vector<uint8_t> singles_beta_cache_status;
+
   std::unordered_map<int, std::vector<int>> alpha_major_to_beta;
 
   std::unordered_map<int, std::vector<int>> alpha_major_to_det;
@@ -69,12 +75,18 @@ class ConnectionsSandeepImpl : public Connections {
   std::unordered_map<int, std::vector<int>> beta_major_to_det;
 
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
+
+  std::vector<int> get_alpha_singles(
+      const int i, const data::SpinDeterminant& det_up) const;
+
+  std::vector<int> get_beta_singles(
+      const int i, const data::SpinDeterminant& det_dn) const;
 };
 
 constexpr uint8_t ConnectionsSandeepImpl::NOT_CACHED;
 constexpr uint8_t ConnectionsSandeepImpl::CACHED;
 constexpr uint8_t ConnectionsSandeepImpl::CACHE_OUTDATED;
-constexpr uint8_t ConnectionsSandeepImpl::CACHE_LIMIT_EXCEEDED;
+constexpr uint8_t ConnectionsSandeepImpl::CACHE_OVERFLOW;
 
 ConnectionsSandeepImpl::ConnectionsSandeepImpl(
     Session* const session, AbstractSystem* const abstract_system)
@@ -84,6 +96,7 @@ ConnectionsSandeepImpl::ConnectionsSandeepImpl(
   n_up = config->get_int("n_up");
   n_dn = config->get_int("n_dn");
   cache_size = config->get_int("cache_size");
+  singles_cache_size = config->get_int("singles_cache_size");
   n_dets = 0;
   n_dets_prev = 0;
 }
@@ -98,6 +111,8 @@ void ConnectionsSandeepImpl::clear() {
   unique_ab_m1.clear();
   singles_from_alpha.clear();
   singles_from_beta.clear();
+  singles_alpha_cache_status.clear();
+  singles_beta_cache_status.clear();
   alpha_major_to_beta.clear();
   alpha_major_to_det.clear();
   beta_major_to_alpha.clear();
@@ -108,6 +123,9 @@ void ConnectionsSandeepImpl::update() {
   n_dets_prev = n_dets;
   n_dets = abstract_system->wf->terms_size();
   if (n_dets_prev == n_dets) return;
+
+  singles_alpha_cache_status.resize(n_dets, CACHED);
+  singles_beta_cache_status.resize(n_dets, CACHED);
 
   std::unordered_set<int> changed_alphas;
   std::unordered_set<int> changed_betas;
@@ -135,13 +153,23 @@ void ConnectionsSandeepImpl::update() {
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
         const auto& alpha_m1 = det_up.SerializeAsString();
         for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
-          if (alpha_singles_set.count(alpha_single) == 0) {
+          if (singles_alpha_cache_status[alpha_id] != CACHE_OVERFLOW &&
+              alpha_singles_set.count(alpha_single) == 0) {
             singles_from_alpha[alpha_id].push_back(alpha_single);
             alpha_singles_set.insert(alpha_single);
+            if (singles_from_alpha[alpha_id].size() > singles_cache_size) {
+              singles_alpha_cache_status[alpha_id] = CACHE_OVERFLOW;
+              singles_from_alpha[alpha_id].clear();
+            }
           }
-          if (singles_from_alpha[alpha_single].empty() ||
-              singles_from_alpha[alpha_single].back() != alpha_id) {
+          if (singles_alpha_cache_status[alpha_single] != CACHE_OVERFLOW &&
+              (singles_from_alpha[alpha_single].empty() ||
+               singles_from_alpha[alpha_single].back() != alpha_id)) {
             singles_from_alpha[alpha_single].push_back(alpha_id);
+            if (singles_from_alpha[alpha_single].size() > singles_cache_size) {
+              singles_alpha_cache_status[alpha_single] = CACHE_OVERFLOW;
+              singles_from_alpha[alpha_single].clear();
+            }
           }
         }
         unique_ab_m1[alpha_m1].first.push_back(alpha_id);
@@ -167,13 +195,23 @@ void ConnectionsSandeepImpl::update() {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
         for (const int beta_single : unique_ab_m1[beta_m1].second) {
-          if (single_betas_set.count(beta_single) == 0) {
+          if (singles_beta_cache_status[beta_id] != CACHE_OVERFLOW &&
+              single_betas_set.count(beta_single) == 0) {
             singles_from_beta[beta_id].push_back(beta_single);
             single_betas_set.insert(beta_single);
+            if (singles_from_beta[beta_id].size() > singles_cache_size) {
+              singles_beta_cache_status[beta_id] = CACHE_OVERFLOW;
+              singles_from_beta[beta_id].clear();
+            }
           }
-          if (singles_from_beta[beta_single].empty() ||
-              singles_from_beta[beta_single].back() != beta_id) {
+          if (singles_beta_cache_status[beta_single] != CACHE_OVERFLOW &&
+              (singles_from_beta[beta_single].empty() ||
+               singles_from_beta[beta_single].back() != beta_id)) {
             singles_from_beta[beta_single].push_back(beta_id);
+            if (singles_from_beta[beta_single].size() > singles_cache_size) {
+              singles_beta_cache_status[beta_single] = CACHE_OVERFLOW;
+              singles_from_beta[beta_single].clear();
+            }
           }
         }
         unique_ab_m1[beta_m1].second.push_back(beta_id);
@@ -187,8 +225,6 @@ void ConnectionsSandeepImpl::update() {
     alpha_major_to_det[alpha_id].push_back(i);
     beta_major_to_alpha[beta_id].push_back(alpha_id);
     beta_major_to_det[beta_id].push_back(i);
-
-    // printf("i:%d ai:%d bi:%d\n", i, alpha_id, beta_id);
 
     if (changed_alphas.count(alpha_id) == 0) {
       changed_alphas.insert(alpha_id);
@@ -212,6 +248,60 @@ void ConnectionsSandeepImpl::update() {
   for (int i = 0; i < n_dets_prev; i++) {
     if (cache_status[i] == CACHED) cache_status[i] = CACHE_OUTDATED;
   }
+}
+
+std::vector<int> ConnectionsSandeepImpl::get_alpha_singles(
+    const int i, const data::SpinDeterminant& det_up) const {
+  if (singles_alpha_cache_status[i] == CACHED) {
+    return singles_from_alpha.at(i);
+  }
+
+  std::vector<int> res;
+
+  const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det_up);
+  data::SpinDeterminant det_up_copy(det_up);
+  std::unordered_set<int> alpha_singles_set;
+  for (int j = 0; j < n_up; j++) {
+    SpinDetUtil::set_occupation(&det_up_copy, up_elecs[j], false);
+    const auto& alpha_m1 = det_up_copy.SerializeAsString();
+    for (const int alpha_single : unique_ab_m1.at(alpha_m1).first) {
+      if (alpha_singles_set.count(alpha_single) == 0) {
+        res.push_back(alpha_single);
+        alpha_singles_set.insert(alpha_single);
+      }
+    }
+    SpinDetUtil::set_occupation(&det_up_copy, up_elecs[j], true);
+  }
+  std::sort(res.begin(), res.end());
+
+  return res;
+}
+
+std::vector<int> ConnectionsSandeepImpl::get_beta_singles(
+    const int i, const data::SpinDeterminant& det_dn) const {
+  if (singles_beta_cache_status[i] == CACHED) {
+    return singles_from_beta.at(i);
+  }
+
+  std::vector<int> res;
+
+  const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det_dn);
+  data::SpinDeterminant det_dn_copy(det_dn);
+  std::unordered_set<int> beta_singles_set;
+  for (int j = 0; j < n_dn; j++) {
+    SpinDetUtil::set_occupation(&det_dn_copy, dn_elecs[j], false);
+    const auto& beta_m1 = det_dn_copy.SerializeAsString();
+    for (const int beta_single : unique_ab_m1.at(beta_m1).second) {
+      if (beta_singles_set.count(beta_single) == 0) {
+        res.push_back(beta_single);
+        beta_singles_set.insert(beta_single);
+      }
+    }
+    SpinDetUtil::set_occupation(&det_dn_copy, dn_elecs[j], true);
+  }
+  std::sort(res.begin(), res.end());
+
+  return res;
 }
 
 void ConnectionsSandeepImpl::sort_by_first(
@@ -287,8 +377,10 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   }
 
   // One up one down exciation.
-  const auto& one_ups = singles_from_alpha[alpha_id];
-  const auto& one_dns = singles_from_beta[beta_id];
+  // const auto& one_ups = singles_from_alpha[alpha_id];
+  // const auto& one_dns = singles_from_beta[beta_id];
+  const auto& one_ups = get_alpha_singles(alpha_id, det.up());
+  const auto& one_dns = get_beta_singles(beta_id, det.dn());
   for (auto it_up = one_ups.begin(); it_up != one_ups.end(); it_up++) {
     const int single_alpha_id = *it_up;
     const auto& connected_beta_ids = alpha_major_to_beta[single_alpha_id];
@@ -317,13 +409,12 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   }
 
   // Cache if within threshold.
-  const int n_connections = res.size();
-  if (n_connections <= cache_size) {
+  if (res.size() <= cache_size) {
     cached_connections[i] = res;
     cache_status[i] = CACHED;
   } else {
     cached_connections[i].clear();
-    cache_status[i] = CACHE_LIMIT_EXCEEDED;
+    cache_status[i] = CACHE_OVERFLOW;
   }
 
   return res;
