@@ -33,8 +33,10 @@ class ConnectionsSandeepImpl : public Connections {
 
   int n_dn = 0;
 
+  // Maximum number of connetions to cache for each det.
   size_t cache_size = 0;
 
+  // Maximum number of single connections to cache for each unique a/b.
   size_t singles_cache_size = 0;
 
   std::vector<std::vector<std::pair<int, double>>> cached_connections;
@@ -76,6 +78,7 @@ class ConnectionsSandeepImpl : public Connections {
 
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
 
+  // Get singles a/b from cache or calculate on the fly.
   std::vector<int> get_alpha_singles(
       const int i, const data::SpinDeterminant& det_up) const;
 
@@ -348,9 +351,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   const auto& beta = det.dn().SerializeAsString();
   const int beta_id = unique_betas[beta];
   const auto& two_ups = beta_major_to_det[beta_id];
-  // const auto& start_it_two_ups =
-  //     std::lower_bound(two_ups.begin(), two_ups.end(), start_id);
-  // for (auto it = start_it_two_ups; it != two_ups.end(); it++) {
   for (auto it = two_ups.begin(); it != two_ups.end(); it++) {
     const int det_id = *it;
     if (det_id < start_id) continue;
@@ -364,9 +364,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   const auto& alpha = det.up().SerializeAsString();
   const int alpha_id = unique_alphas[alpha];
   const auto& two_dns = alpha_major_to_det[alpha_id];
-  // const auto& start_it_two_dns =
-  //     std::lower_bound(two_dns.begin(), two_dns.end(), start_id);
-  // for (auto it = start_it_two_dns; it != two_dns.end(); it++) {
   for (auto it = two_dns.begin(); it != two_dns.end(); it++) {
     const int det_id = *it;
     if (det_id < start_id) continue;
@@ -377,8 +374,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   }
 
   // One up one down exciation.
-  // const auto& one_ups = singles_from_alpha[alpha_id];
-  // const auto& one_dns = singles_from_beta[beta_id];
   const auto& one_ups = get_alpha_singles(alpha_id, det.up());
   const auto& one_dns = get_beta_singles(beta_id, det.dn());
   for (auto it_up = one_ups.begin(); it_up != one_ups.end(); it_up++) {
@@ -403,7 +398,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
         const double H = abstract_system->hamiltonian(&det, &det_id_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
         res.push_back(std::make_pair(det_id, H));
-        // printf("%d %d %.12f\n", i, det_id, H);
       }
     }
   }
