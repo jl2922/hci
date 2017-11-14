@@ -434,7 +434,8 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
     }
   });
   partial_sums_pre.clear();
-  timer->end();  // Accumulate.
+  parallel->reduce_to_sum(n_pt_dets_pre_dtm);
+  parallel->reduce_to_sum(energy_pts_pre_dtm);
 
   if (verbose) {
     printf(TABLE_FORMAT_ITEM_NAME, "# orbitals PT:");
@@ -459,6 +460,7 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
     }
     printf("\n");
   }
+  timer->end();  // Accumulate.
   timer->end();  // pre dtm.
 
   return energy_pts_pre_dtm;
