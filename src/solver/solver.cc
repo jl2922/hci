@@ -381,7 +381,7 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
   if (verbose) printf(">>> eps_pre_dtm_pt %#.4g\n", eps_pre_dtm_pt);
   timer->start("search");
   double target_progress = 0.25;
-#pragma omp parallel for schedule(static, 1)
+#pragma omp parallel for schedule(dynamic, 5)
   for (int i = 0; i < n_var_dets; i++) {
     const auto& term = abstract_system->wf->terms(i);
     const auto& var_det = term.det();
@@ -496,7 +496,7 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
 
     double target_progress = 0.25;
     timer->start("search");
-#pragma omp parallel for schedule(static, 1)
+#pragma omp parallel for schedule(dynamic, 5)
     for (int i = 0; i < n_var_dets; i++) {
       const auto& term = abstract_system->wf->terms(i);
       const auto& var_det = term.det();
@@ -745,7 +745,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     // Search PT dets from selected sample var dets.
     const int n_stc_pt_sample_dets = stc_pt_sample_dets_list.size();
 
-#pragma omp parallel for schedule(static, 1)
+#pragma omp parallel for schedule(dynamic, 2)
     for (int s = 0; s < n_stc_pt_sample_dets; s++) {
       const int var_det_id = stc_pt_sample_dets_list[s];
       const double prob = probs[var_det_id];
