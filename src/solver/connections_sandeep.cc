@@ -72,9 +72,15 @@ class ConnectionsSandeepImpl : public Connections {
 
   std::unordered_map<int, std::vector<int>> alpha_major_to_det;
 
+  std::unordered_map<int, std::vector<int>> alpha_major_to_det2;
+
   std::unordered_map<int, std::vector<int>> beta_major_to_alpha;
 
   std::unordered_map<int, std::vector<int>> beta_major_to_det;
+
+  std::unordered_map<int, std::vector<int>> beta_major_to_det2;
+
+  std::vector<std::vector<bool>> one_up;
 
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
 
@@ -102,6 +108,7 @@ ConnectionsSandeepImpl::ConnectionsSandeepImpl(
   singles_cache_size = config->get_int("singles_cache_size");
   n_dets = 0;
   n_dets_prev = 0;
+  one_up.resize(omp_get_max_threads());
 }
 
 void ConnectionsSandeepImpl::clear() {
@@ -118,8 +125,10 @@ void ConnectionsSandeepImpl::clear() {
   singles_beta_cache_status.clear();
   alpha_major_to_beta.clear();
   alpha_major_to_det.clear();
+  alpha_major_to_det2.clear();
   beta_major_to_alpha.clear();
   beta_major_to_det.clear();
+  beta_major_to_det2.clear();
 }
 
 void ConnectionsSandeepImpl::update() {
@@ -226,8 +235,10 @@ void ConnectionsSandeepImpl::update() {
 
     alpha_major_to_beta[alpha_id].push_back(beta_id);
     alpha_major_to_det[alpha_id].push_back(i);
+    alpha_major_to_det2[alpha_id].push_back(i);
     beta_major_to_alpha[beta_id].push_back(alpha_id);
     beta_major_to_det[beta_id].push_back(i);
+    beta_major_to_det2[beta_id].push_back(i);
 
     if (changed_alphas.count(alpha_id) == 0) {
       changed_alphas.insert(alpha_id);
@@ -374,31 +385,64 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   }
 
   // One up one down exciation.
-  const auto& one_ups = get_alpha_singles(alpha_id, det.up());
-  const auto& one_dns = get_beta_singles(beta_id, det.dn());
-  for (auto it_up = one_ups.begin(); it_up != one_ups.end(); it_up++) {
-    const int single_alpha_id = *it_up;
-    const auto& connected_beta_ids = alpha_major_to_beta[single_alpha_id];
-    const auto& connected_det_ids = alpha_major_to_det[single_alpha_id];
-    const int n_connected_betas = connected_beta_ids.size();
-    int ptr = 0;
-    for (auto it_dn = one_dns.begin(); it_dn != one_dns.end(); it_dn++) {
-      const int single_beta_id = *it_dn;
-
-      while (ptr < n_connected_betas &&
-             connected_beta_ids[ptr] < single_beta_id) {
-        ptr++;
+  if (n_dets - n_dets_prev < 0.1 * n_dets) {
+    std::vector<int> one_up_dets;
+    const auto& single_alphas = get_alpha_singles(alpha_id, det.up());
+    const auto& single_beta = get_beta_singles(beta_id, det.dn());
+    for (auto it = single_alphas.begin(); it != single_alphas.end(); it++) {
+      const int single_alpha_id = *it;
+      const auto& alpha_dets = alpha_major_to_det2[single_alpha_id];
+      const auto& start_it =
+          std::lower_bound(alpha_dets.begin(), alpha_dets.end(), start_id);
+      for (auto it_det = start_it; it_det < alpha_dets.end(); it_det++) {
+        const int det_id = *it_det;
+        one_up[thread_id][det_id] = true;
+        one_up_dets.push_back(det_id);
       }
-      if (ptr == n_connected_betas) break;
+    }
+    for (auto it = single_betas.begin(); it != single_betas.end(); it++) {
+      const int single_beta_id = *it;
+      const auto& beta_dets = beta_major_to_det2[single_beta_id];
+      const auto& start_it =
+          std::lower_bound(beta_dets.begin(), beta_dets.end(), start_id);
+      for (auto it_det = start_it; it_det < beta_dets.end(); it_det++) {
+        const int det_id = *it_det;
+        if (one_up[thread_id][det_id]) {
+          const auto& det_id_det = abstract_system->wf->terms(det_id).det();
+          const double H = abstract_system->hamiltonian(&det, &det_id_det);
+          if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+          res.push_back(std::make_pair(det_id, H));
+        }
+      }
+    }
+    for (const int det_id : one_up_dets) one_up[thread_id][det_id] = false;
+  } else {
+    const auto& one_ups = get_alpha_singles(alpha_id, det.up());
+    const auto& one_dns = get_beta_singles(beta_id, det.dn());
+    for (auto it_up = one_ups.begin(); it_up != one_ups.end(); it_up++) {
+      const int single_alpha_id = *it_up;
+      const auto& connected_beta_ids = alpha_major_to_beta[single_alpha_id];
+      const auto& connected_det_ids = alpha_major_to_det[single_alpha_id];
+      const int n_connected_betas = connected_beta_ids.size();
+      int ptr = 0;
+      for (auto it_dn = one_dns.begin(); it_dn != one_dns.end(); it_dn++) {
+        const int single_beta_id = *it_dn;
 
-      if (connected_beta_ids[ptr] == single_beta_id) {
-        const int det_id = connected_det_ids[ptr];
-        ptr++;
-        if (det_id < start_id) continue;
-        const auto& det_id_det = abstract_system->wf->terms(det_id).det();
-        const double H = abstract_system->hamiltonian(&det, &det_id_det);
-        if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-        res.push_back(std::make_pair(det_id, H));
+        while (ptr < n_connected_betas &&
+               connected_beta_ids[ptr] < single_beta_id) {
+          ptr++;
+        }
+        if (ptr == n_connected_betas) break;
+
+        if (connected_beta_ids[ptr] == single_beta_id) {
+          const int det_id = connected_det_ids[ptr];
+          ptr++;
+          if (det_id < start_id) continue;
+          const auto& det_id_det = abstract_system->wf->terms(det_id).det();
+          const double H = abstract_system->hamiltonian(&det, &det_id_det);
+          if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+          res.push_back(std::make_pair(det_id, H));
+        }
       }
     }
   }
