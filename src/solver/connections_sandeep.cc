@@ -262,6 +262,13 @@ void ConnectionsSandeepImpl::update() {
   for (int i = 0; i < n_dets_prev; i++) {
     if (cache_status[i] == CACHED) cache_status[i] = CACHE_OUTDATED;
   }
+
+#pragma omp parallel
+  {
+    // Connected and one up arrays.
+    const int thread_id = omp_get_thread_num();
+    one_up[thread_id].assign(n_dets, false);
+  }
 }
 
 std::vector<int> ConnectionsSandeepImpl::get_alpha_singles(
@@ -385,10 +392,11 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   }
 
   // One up one down exciation.
-  if (n_dets - n_dets_prev < 0.1 * n_dets) {
+  if (n_dets - n_dets_prev < 0.2 * n_dets) {
     std::vector<int> one_up_dets;
     const auto& single_alphas = get_alpha_singles(alpha_id, det.up());
-    const auto& single_beta = get_beta_singles(beta_id, det.dn());
+    const auto& single_betas = get_beta_singles(beta_id, det.dn());
+    const int thread_id = omp_get_thread_num();
     for (auto it = single_alphas.begin(); it != single_alphas.end(); it++) {
       const int single_alpha_id = *it;
       const auto& alpha_dets = alpha_major_to_det2[single_alpha_id];
