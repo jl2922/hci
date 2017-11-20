@@ -1,5 +1,7 @@
 #include <clocale>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include "data.pb.h"
 #include "injector.h"
 
@@ -41,7 +43,7 @@ int main(int argc, char** argv) {
 
   google::protobuf::ShutdownProtobufLibrary();
 
-  std::system("touch finish.log");
+  std::ofstream finish_log("finish.log", std::ios::out);
 
   return 0;
 }
