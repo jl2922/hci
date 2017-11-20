@@ -26,7 +26,7 @@ def BEWRegression(X, y, e, title):
     intercept = results.params.values[0]
     variance = np.square(
         np.dot(augX, np.abs(results.params.values)) + intercept) + np.square(e)
-    iteration = 1
+    iteration = 0
     while True:
         results = sm.WLS(y, augX, weights=1.0 / variance).fit()
         printCorrelationEnergy(results)
@@ -41,7 +41,7 @@ def BEWRegression(X, y, e, title):
         maxPIndex = np.argmax(results.pvalues)
         maxP = results.pvalues[maxPIndex]
 
-        if maxP < 0.01:
+        if maxP < 0.5:
             break
         print('Eliminate: ' + maxPIndex)
         print('P > |t|: ' + str(maxP))
@@ -52,7 +52,7 @@ def BEWRegression(X, y, e, title):
     variance = np.square(
         np.dot(augX, np.abs(results.params.values)) + intercept) + np.square(e)
     results = sm.WLS(y, augX, weights=1.0 / variance).fit()
-    print(results.summary())
+    # print(results.summary())
     printCorrelationEnergy(results)
 
 
@@ -81,9 +81,12 @@ def main():
     selectedParameters = parameters[:]
     for i in range(len(parameters)):
         for j in range(i, len(parameters)):
-            column = parameters[i] + ' * ' + parameters[j]
-            selectedParameters.append(column)
-            data[column] = data[parameters[i]] * data[parameters[j]]
+            for k in range(j, len(parameters)):
+                column = parameters[i] + ' * ' + \
+                    parameters[j] + ' * ' + parameters[k]
+                selectedParameters.append(column)
+                data[column] = data[parameters[i]] * \
+                    data[parameters[j]] * data[parameters[k]]
 
     # Estimate intercept.
     X = data[selectedParameters]
