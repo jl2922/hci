@@ -277,9 +277,11 @@ std::vector<double> SolverImpl::apply_hamiltonian(
       const int j = conn.first;
       const double H_ij = conn.second;
       res[i] += H_ij * vec[j];
-      n_nonzero_elems[thread_id]++;
       if (i != j) {
         res[j] += H_ij * vec[i];
+        n_nonzero_elems[thread_id] += 2;
+      } else {
+        n_nonzero_elems[thread_id]++;
       }
     }
     if (verbose && first_iteration && thread_id == 0) {
@@ -299,9 +301,7 @@ std::vector<double> SolverImpl::apply_hamiltonian(
   }
   parallel->reduce_to_sum(total_nonzero_elems);
   if (verbose && first_iteration) {
-    printf(
-        "Number of non-zero elements (upper triangle): %'llu\n",
-        total_nonzero_elems);
+    printf("Number of non-zero elements: %'llu\n", total_nonzero_elems);
   }
 
   session->get_timer()->checkpoint("hamiltonian applied");
