@@ -33,7 +33,7 @@ class Solver {
   virtual bool load_variation_result(const std::string& filename) = 0;
 
   virtual std::vector<double> apply_hamiltonian(
-      const std::vector<double>& vec, const bool print_progress) = 0;
+      const std::vector<double>& vec, const bool first_iteration) = 0;
 
   virtual void perturbation(
       const int n_orbs_var,
