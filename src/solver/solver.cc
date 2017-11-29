@@ -202,7 +202,7 @@ void SolverImpl::variation(const double eps_var) {
     }
 
     // Determine convergence.
-    if (std::abs(energy_var_new - energy_var) < 1.0e-6) {
+    if (std::abs(energy_var_new - energy_var) < 1.0e-7) {
       converged = true;
     }
 

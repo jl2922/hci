@@ -44,6 +44,12 @@ class ParallelImpl : public Parallel {
     boost::mpi::all_reduce(world, local_value, value, VectorPlus<double>());
   }
 
+  void reduce_to_sum(std::vector<long double>& value) {
+    std::vector<long double> local_value = value;
+    boost::mpi::all_reduce(
+        world, local_value, value, VectorPlus<long double>());
+  }
+
  private:
   int proc_id = 0;
 

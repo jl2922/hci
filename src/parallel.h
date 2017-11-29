@@ -31,6 +31,8 @@ class Parallel {
   virtual void reduce_to_sum(std::vector<unsigned long long>& value) = 0;
 
   virtual void reduce_to_sum(std::vector<double>& value) = 0;
+
+  virtual void reduce_to_sum(std::vector<long double>& value) = 0;
 };
 
 #pragma omp declare reduction(      \
