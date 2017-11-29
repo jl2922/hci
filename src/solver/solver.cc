@@ -47,7 +47,7 @@ class SolverImpl : public Solver {
   bool load_variation_result(const std::string& filename) override;
 
   std::vector<double> apply_hamiltonian(
-      const std::vector<double>& vec, const bool print_progress) override;
+      const std::vector<double>& vec, const bool first_iteration) override;
 
   void perturbation(
       const int n_orbs_var,
@@ -255,30 +255,34 @@ void SolverImpl::print_var_result() const {
 }
 
 std::vector<double> SolverImpl::apply_hamiltonian(
-    const std::vector<double>& vec, const bool print_progress) {
+    const std::vector<double>& vec, const bool first_iteration) {
   const int n_dets = vec.size();
   Parallel* const parallel = session->get_parallel();
   const int proc_id = parallel->get_proc_id();
   const int n_procs = parallel->get_n_procs();
+  const int n_threads = parallel->get_n_threads();
   std::vector<double> res(n_dets, 0.0);
+  std::vector<unsigned long long> n_nonzero_elems(n_threads, 0);
 
   double target_progress = 0.01;
-  if (verbose && print_progress) {
+  if (verbose && first_iteration) {
     printf("Applying hamiltonian: ");
     fflush(stdout);
   }
 #pragma omp parallel for reduction(vec_double_plus : res) schedule(dynamic, 10)
   for (int i = proc_id; i < n_dets; i += n_procs) {
+    const int thread_id = omp_get_thread_num();
     const auto& conns = connections->get_connections(i);
     for (const auto conn : conns) {
       const int j = conn.first;
       const double H_ij = conn.second;
       res[i] += H_ij * vec[j];
+      n_nonzero_elems[thread_id]++;
       if (i != j) {
         res[j] += H_ij * vec[i];
       }
     }
-    if (verbose && print_progress && omp_get_thread_num() == 0) {
+    if (verbose && first_iteration && thread_id == 0) {
       if (i > target_progress * n_dets) {
         printf("%.0f%% ", target_progress * 100);
         fflush(stdout);
@@ -286,9 +290,20 @@ std::vector<double> SolverImpl::apply_hamiltonian(
       }
     }
   }
-  if (verbose && print_progress) printf("\n");
+  if (verbose && first_iteration) printf("\n");
 
   parallel->reduce_to_sum(res);
+  unsigned long long total_nonzero_elems = 0;
+  for (int i = 0; i < n_threads; i++) {
+    total_nonzero_elems += n_nonzero_elems[i];
+  }
+  parallel->reduce_to_sum(total_nonzero_elems);
+  if (verbose && first_iteration) {
+    printf(
+        "Number of non-zero elements (upper triangle): %'llu\n",
+        total_nonzero_elems);
+  }
+
   session->get_timer()->checkpoint("hamiltonian applied");
 
   return res;
@@ -415,6 +430,12 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
       }
     }
   }
+  while (target_progress <= 100) {
+    std::string event =
+        str(boost::format("Progress: %.2f %%") % target_progress);
+    timer->checkpoint(event);
+    target_progress *= 2.0;
+  }
   timer->end();  // Search.
 
   timer->start("accumulate");
@@ -540,6 +561,12 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
           target_progress *= 2.0;
         }
       }
+    }
+    while (target_progress <= 100) {
+      std::string event =
+          str(boost::format("Progress: %.2f %%") % target_progress);
+      timer->checkpoint(event);
+      target_progress *= 2.0;
     }
     timer->end();  // Search.
 
@@ -723,8 +750,10 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     stc_pt_sample_dets_list.clear();
 
     std::vector<std::vector<double>> energy_pts_loop(n_eps_pts);
+    std::vector<std::vector<unsigned long long>> n_pt_dets_loop(n_eps_pts);
     for (int i = 0; i < n_eps_pts; i++) {
       energy_pts_loop[i].resize(n_n_orbs_pts, 0.0);
+      n_pt_dets_loop[i].resize(n_n_orbs_pts, 0);
     }
 
     // Generate random samples.
@@ -834,6 +863,8 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
                 if (n_orbs_pts[k] < n_orbs_used) continue;
 #pragma omp atomic
                 energy_pts_loop[j][k] += contrib_1;
+#pragma omp atomic
+                n_pt_dets_loop[j][k]++;
               }
             }
           });
@@ -842,6 +873,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     // Append loop results store.
     for (int i = 0; i < n_eps_pts; i++) {
       parallel->reduce_to_sum(energy_pts_loop[i]);
+      parallel->reduce_to_sum(n_pt_dets_loop[i]);
       for (int j = 0; j < n_n_orbs_pts; j++) {
         energy_pts_loops[i][j].push_back(energy_pts_loop[i][j]);
       }
@@ -868,6 +900,11 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
       printf("\n");
       for (int i = 0; i < n_eps_pts; i++) {
         printf(">>> eps_stc_pt %#.4g\n", eps_pts[i]);
+        printf(TABLE_FORMAT_ITEM_NAME, "Loop # STC PT dets:");
+        for (int j = 0; j < n_n_orbs_pts; j++) {
+          printf(TABLE_FORMAT_LL, n_pt_dets_loop[i][j]);
+        }
+        printf("\n");
         printf(TABLE_FORMAT_ITEM_NAME, "Loop STC energy PT:");
         for (int j = 0; j < n_n_orbs_pts; j++) {
           printf(TABLE_FORMAT_F, energy_pts_loops[i][j][iteration]);
