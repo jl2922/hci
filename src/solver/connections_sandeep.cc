@@ -68,23 +68,31 @@ class ConnectionsSandeepImpl : public Connections {
 
   std::vector<uint8_t> singles_beta_cache_status;
 
+  // Sorted by unique beta id.
   std::unordered_map<int, std::vector<int>> alpha_major_to_beta;
 
+  // Sorted by unique beta id.
   std::unordered_map<int, std::vector<int>> alpha_major_to_det;
 
+  // Sorted by det id.
   std::unordered_map<int, std::vector<int>> alpha_major_to_det2;
 
+  // Sorted by unique alpha id.
   std::unordered_map<int, std::vector<int>> beta_major_to_alpha;
 
+  // Sorted by unique alpha id.
   std::unordered_map<int, std::vector<int>> beta_major_to_det;
 
+  // Sorted by det id.
   std::unordered_map<int, std::vector<int>> beta_major_to_det2;
 
+  // Reusing an array of n_dets false values for efficiency.
   std::vector<std::vector<bool>> one_up;
 
+  // Sort both vectors by the first vector.
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
 
-  // Get singles a/b from cache or calculate on the fly.
+  // Get singles a/b from cache or calculate on the fly if not cached..
   std::vector<int> get_alpha_singles(
       const int i, const data::SpinDeterminant& det_up) const;
 
@@ -378,7 +386,7 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
     res.push_back(std::make_pair(det_id, H));
   }
 
-  // Two down exciation.
+  // Two down excitation.
   const auto& alpha = det.up().SerializeAsString();
   const int alpha_id = unique_alphas[alpha];
   const auto& two_dns = alpha_major_to_det[alpha_id];
@@ -391,7 +399,7 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
     res.push_back(std::make_pair(det_id, H));
   }
 
-  // One up one down exciation.
+  // One up one down excitation.
   if (n_dets - n_dets_prev < 0.2 * n_dets) {
     std::vector<int> one_up_dets;
     const auto& single_alphas = get_alpha_singles(alpha_id, det.up());
