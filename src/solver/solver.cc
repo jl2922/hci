@@ -344,11 +344,13 @@ void SolverImpl::perturbation(
 
   // Record results.
   bool log_file_exists = false;
-  if (std::ifstream(PT_RESULTS_LOG)) {
+  const auto results_log_filename =
+      str(boost::format("pt_results_%d.csv") % n_orbs_var);
+  if (std::ifstream(results_log_filename)) {
     log_file_exists = true;
   }
   std::ofstream results_log(
-      PT_RESULTS_LOG, std::ios_base::app | std::ios_base::out);
+      results_log_filename, std::ios_base::app | std::ios_base::out);
   if (!log_file_exists) {
     results_log << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,uncert,"
                 << "energy_hf,energy_var,energy_pt" << std::endl;
