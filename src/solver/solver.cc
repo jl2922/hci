@@ -315,6 +315,14 @@ void SolverImpl::perturbation(
     const double eps_var,
     const std::vector<int>& n_orbs_pts,
     const std::vector<double>& eps_pts) {
+  // Check if the results already exists.
+  const auto result_filename =
+      str(boost::format("pt_%d_%#.4g.csv") % n_orbs_var % eps_var);
+  if (std::ifstream(result_filename)) {
+    if (verbose) printf("PT results found in: %s\n", result_filename.c_str());
+    return;
+  }
+
   // Clean variation variables.
   connections->clear();
 
@@ -343,16 +351,9 @@ void SolverImpl::perturbation(
       get_energy_pts_stc(n_orbs_pts, eps_pts, energy_pts_dtm);
 
   // Record results.
-  bool log_file_exists = false;
-  if (std::ifstream(PT_RESULTS_LOG)) {
-    log_file_exists = true;
-  }
-  std::ofstream results_log(
-      PT_RESULTS_LOG, std::ios_base::app | std::ios_base::out);
-  if (!log_file_exists) {
-    results_log << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,uncert,"
-                << "energy_hf,energy_var,energy_pt" << std::endl;
-  }
+  std::ofstream result_file(result_filename);
+  result_file << "n_orbs_var,eps_var,n_orbs_pt,eps_pt,energy_corr,uncert,"
+              << "energy_hf,energy_var,energy_pt" << std::endl;
 
   const int n_n_orbs_pts = n_orbs_pts.size();
   for (int i = 0; i < n_eps_pts; i++) {
@@ -366,7 +367,7 @@ void SolverImpl::perturbation(
           std::pow(energy_pts_stc[i][j].uncertainty, 2) +
           std::pow(energy_pts_dtm[j].uncertainty, 2));
       const double energy_corr = energy_var + energy_pt - energy_hf;
-      results_log << str(boost::format("%d, %#.4g, %d, %#.4g, %#.15g, %#.15g, "
+      result_file << str(boost::format("%d, %#.4g, %d, %#.4g, %#.15g, %#.15g, "
                                        "%#.15g, %#.15g, %#.15g") %
                          n_orbs_var % eps_var % n_orbs_pt % eps_pt %
                          energy_corr % uncert % energy_hf % energy_var %
@@ -375,7 +376,11 @@ void SolverImpl::perturbation(
     }
   }
 
-  results_log.close();
+  if (verbose) {
+    printf("Results saved to: %s\n", result_filename.c_str());
+  }
+
+  result_file.close();
 }
 
 std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
