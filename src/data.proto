@@ -5,7 +5,7 @@ package data;
 message VariationResult {
   double energy_hf = 1;
   double energy_var = 2;
-  Wavefunction wf = 5;
+  int32 n_dets = 3;
 }
 
 message Wavefunction {
