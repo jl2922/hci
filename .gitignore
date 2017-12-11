@@ -15,6 +15,7 @@ runs/
 config.json
 *.log
 var_*.dat
+var_*.dat.*
 out_*.txt
 *.csv
 *.run.sh
