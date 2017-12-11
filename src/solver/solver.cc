@@ -280,7 +280,7 @@ bool SolverImpl::load_variation_result(const std::string& filename) {
     trunk_id++;
     std::fstream var_file(wf_filename, std::ios::in | std::ios::binary);
     if (!trunk_wf.ParseFromIstream(&var_file)) {
-      throw "Variational results corrupted.";
+      throw std::runtime_error("variational results corrupted");
     }
     const int trunk_n_dets = trunk_wf.terms_size();
     for (int i = 0; i < trunk_n_dets; i++) {
