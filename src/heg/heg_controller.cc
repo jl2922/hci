@@ -39,7 +39,7 @@ void HEGControllerImpl::run() {
 
   if (session->get_config()->get_bool("variation_only")) return;
 
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   run_all_perturbations();
 }
 

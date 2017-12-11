@@ -22,6 +22,7 @@
 #define TABLE_FORMAT_LL "%'17llu"
 #define MAX_HASH_LOAD 1.618
 #define PT_RESULTS_LOG "pt_results.csv"
+#define MAX_DETS_PER_FILE 30000
 
 class UncertainResult {
  public:
@@ -216,21 +217,47 @@ void SolverImpl::variation(const double eps_var) {
 };
 
 void SolverImpl::save_variation_result(const std::string& filename) {
+  // Write summary.
   std::fstream var_file(
       filename, std::ios::out | std::ios::trunc | std::ios::binary);
   data::VariationResult res;
+  data::Wavefunction trunk_wf;
   res.set_energy_hf(energy_hf);
   res.set_energy_var(energy_var);
-  res.set_allocated_wf(abstract_system->wf.release());
+  const int n_dets = abstract_system->wf->terms_size();
+  res.set_n_dets(n_dets);
   res.SerializeToOstream(&var_file);
   var_file.close();
-  abstract_system->wf.reset(res.release_wf());
   if (verbose) {
-    printf("Saved to: %s\n", filename.c_str());
+    printf("Saved summary to: %s\n", filename.c_str());
+  }
+
+  // Write wavefunction trunks. (Due to the 2GB serialization limit of Protobuf)
+  int trunk_n_dets = 0;
+  int trunk_id = 0;
+  for (int i = 0; i < n_dets; i++) {
+    data::Term* const new_term = trunk_wf.add_terms();
+    data::Term term_i_copy = data::Term(abstract_system->wf->terms(i));
+    new_term->Swap(&term_i_copy);
+    trunk_n_dets++;
+    if (trunk_n_dets >= MAX_DETS_PER_FILE || i == n_dets - 1) {
+      const auto& wf_filename = filename + ".part" + std::to_string(trunk_id);
+      std::fstream wf_file(
+          wf_filename, std::ios::out | std::ios::trunc | std::ios::binary);
+      trunk_wf.SerializeToOstream(&wf_file);
+      wf_file.close();
+      if (verbose) {
+        printf("Saved %'d dets to: %s\n", trunk_n_dets, wf_filename.c_str());
+      }
+      trunk_wf.Clear();
+      trunk_n_dets = 0;
+      trunk_id++;
+    }
   }
 }
 
 bool SolverImpl::load_variation_result(const std::string& filename) {
+  // Load summary.
   std::fstream var_file(filename, std::ios::in | std::ios::binary);
   data::VariationResult res;
   if (!res.ParseFromIstream(&var_file)) {
@@ -239,11 +266,39 @@ bool SolverImpl::load_variation_result(const std::string& filename) {
   var_file.close();
   energy_hf = res.energy_hf();
   energy_var = res.energy_var();
-  abstract_system->wf.reset(res.release_wf());
+  const int n_dets_total = res.n_dets();
+  abstract_system->wf->Clear();
   if (verbose) {
-    printf("Loaded from: %s\n", filename.c_str());
+    printf("Loaded summary from: %s\n", filename.c_str());
+  }
+
+  // Load wavefunctions from trunks.
+  int n_dets_read = 0;
+  int trunk_id = 0;
+  data::Wavefunction trunk_wf;
+  while (n_dets_read < n_dets_total) {
+    const auto& wf_filename = filename + ".part" + std::to_string(trunk_id);
+    trunk_id++;
+    std::fstream var_file(wf_filename, std::ios::in | std::ios::binary);
+    if (!trunk_wf.ParseFromIstream(&var_file)) {
+      throw "Variational results corrupted.";
+    }
+    const int trunk_n_dets = trunk_wf.terms_size();
+    for (int i = 0; i < trunk_n_dets; i++) {
+      data::Term* const new_term = abstract_system->wf->add_terms();
+      data::Term* term_i = trunk_wf.mutable_terms(i);
+      new_term->Swap(term_i);
+      n_dets_read++;
+    }
+    if (verbose) {
+      printf("Loaded %'d dets from: %s\n", trunk_n_dets, wf_filename.c_str());
+    }
+  }
+
+  if (verbose) {
     print_var_result();
   }
+
   return true;
 }
 
