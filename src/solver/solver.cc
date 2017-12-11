@@ -21,7 +21,6 @@
 #define TABLE_FORMAT_D "%'17d"
 #define TABLE_FORMAT_LL "%'17llu"
 #define MAX_HASH_LOAD 1.618
-#define PT_RESULTS_LOG "pt_results.csv"
 #define MAX_DETS_PER_FILE 20000000
 
 class UncertainResult {
