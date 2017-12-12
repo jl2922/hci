@@ -194,7 +194,7 @@ void SolverImpl::variation(const double eps_var) {
       diagonal[i] = abstract_system->hamiltonian(&det_i, &det_i);
     }
     const auto& diagonalization_result = DavidsonUtil::diagonalize(
-        prev_coefs, diagonal, apply_hamiltonian_func, 10, verbose);
+        prev_coefs, diagonal, apply_hamiltonian_func, 5, verbose);
     const double energy_var_new = diagonalization_result.first;
     const auto& new_coefs = diagonalization_result.second;
     for (int i = 0; i < n_total_dets; i++) {
