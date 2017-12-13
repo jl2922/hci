@@ -277,10 +277,6 @@ void ConnectionsSandeepImpl::update() {
     const int thread_id = omp_get_thread_num();
     one_up[thread_id].assign(n_dets, false);
   }
-
-  printf("ab size: %zu\n", unique_alphas.size());
-  printf("abm1 size: %zu\n", unique_ab_m1.size());
-  printf("absingles size: %zu\n", singles_from_alpha.size());
 }
 
 std::vector<int> ConnectionsSandeepImpl::get_alpha_singles(
@@ -360,7 +356,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   }
 
   std::vector<std::pair<int, double>> res;
-  if (i > 10) return res;
 
   // If already cached in the previous iteration, start from previous results.
   if (cache_status[i] == CACHE_OUTDATED) {
@@ -390,7 +385,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(det_id, H));
   }
-  printf("res[%d] size after alpha: %zu\n", i, res.size());
 
   // Two down excitation.
   const auto& alpha = det.up().SerializeAsString();
@@ -404,7 +398,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(det_id, H));
   }
-  printf("res[%d] size after beta: %zu\n", i, res.size());
 
   // One up one down excitation.
   if (n_dets - n_dets_prev < 0.2 * n_dets) {
@@ -478,8 +471,6 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
     cached_connections[i].clear();
     cache_status[i] = CACHE_OVERFLOW;
   }
-
-  printf("res[%d] size final: %zu\n", i, res.size());
 
   return res;
 }
