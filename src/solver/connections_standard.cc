@@ -135,6 +135,7 @@ void ConnectionsStandardImpl::update() {
   singles_from_alpha.clear();
   singles_from_beta.clear();
   update_absingles();
+  printf("abm1 size: %zu\n", unique_ab_m1.size());
   unique_ab_m1.clear();
 
   cached_connections.resize(n_dets);
@@ -145,6 +146,9 @@ void ConnectionsStandardImpl::update() {
     const int thread_id = omp_get_thread_num();
     one_up[thread_id].assign(n_dets, false);
   }
+
+  printf("ab size: %zu\n", unique_alphas.size());
+  printf("absingles size: %zu\n", singles_from_alpha.size());
 }
 
 std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
@@ -154,6 +158,7 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
   }
 
   std::vector<std::pair<int, double>>& res = cached_connections[i];
+  // if (i > 10) return res;
   const auto& det = abstract_system->wf->terms(i).det();
   const bool is_new_det = i >= n_dets_prev;
 
@@ -176,6 +181,7 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(alpha_det_id, H));
   }
+  // printf("res[%d] size after alpha: %zu\n", i, res.size());
 
   // Single or double beta excitations.
   const auto& alpha = det.up().SerializeAsString();
@@ -189,6 +195,7 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(beta_det_id, H));
   }
+  // printf("res[%d] size after beta: %zu\n", i, res.size());
 
   // Mixed double excitation.
   if (n_dets - n_dets_prev < -0.2 * n_dets) {
@@ -196,18 +203,20 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
     const auto& alpha_singles = singles_from_alpha[alpha_id];
     const auto& beta_singles = singles_from_beta[beta_id];
     for (const auto alpha_single : alpha_singles) {
+      // if (i == 1) printf("\nA:%d ", alpha_single);
       const auto& related_beta_ids = alpha_major_to_beta[alpha_single];
       const auto& related_det_ids = alpha_major_to_det[alpha_single];
       const int n_related_dets = related_beta_ids.size();
       int ptr = 0;
       for (auto it = beta_singles.begin(); it != beta_singles.end(); it++) {
-        const int single_beta_id = *it;
-        while (ptr < n_related_dets && related_beta_ids[ptr] < single_beta_id) {
+        const int beta_single = *it;
+        // if (i == 1) printf("B:%d ", beta_single);
+        while (ptr < n_related_dets && related_beta_ids[ptr] < beta_single) {
           ptr++;
         }
         if (ptr == n_related_dets) break;
 
-        if (related_beta_ids[ptr] == single_beta_id) {
+        if (related_beta_ids[ptr] == beta_single) {
           const int related_det_id = related_det_ids[ptr];
           ptr++;
           if (related_det_id < start_id) continue;
@@ -220,6 +229,7 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
       }
     }
   }
+  // printf("res[%d] size final: %zu\n", i, res.size());
 
   cache_status[i] = CACHED;
 
@@ -349,6 +359,7 @@ void ConnectionsStandardImpl::update_absingles() {
         }
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
       }
+      updated_betas.insert(beta_id);
     }
   }
 
