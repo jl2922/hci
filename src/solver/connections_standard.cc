@@ -42,22 +42,22 @@ class ConnectionsStandardImpl : public Connections {
 
   bool verbose = false;
 
-  std::unordered_map<std::string, int> unique_alphas;
+  std::unordered_map<std::string, int> alpha_to_id;
 
-  std::unordered_map<std::string, int> unique_betas;
+  std::unordered_map<std::string, int> beta_to_id;
 
   std::unordered_map<std::string, std::pair<std::vector<int>, std::vector<int>>>
-      unique_ab_m1;
+      abm1_to_ids;
 
-  std::unordered_map<int, std::vector<int>> singles_from_alpha;
+  std::unordered_map<int, std::vector<int>> alpha_id_to_single_ids;
 
-  std::unordered_map<int, std::vector<int>> singles_from_beta;
-
-  // Sorted by unique beta id.
-  std::unordered_map<int, std::vector<int>> alpha_major_to_beta;
+  std::unordered_map<int, std::vector<int>> beta_id_to_single_ids;
 
   // Sorted by unique beta id.
-  std::unordered_map<int, std::vector<int>> alpha_major_to_det;
+  std::unordered_map<int, std::vector<int>> alpha_id_to_beta_ids;
+
+  // Sorted by unique beta id.
+  std::unordered_map<int, std::vector<int>> alpha_id_to_det_ids;
 
   // Sorted by det id.
   std::unordered_map<int, std::vector<int>> alpha_major_to_det2;
@@ -109,14 +109,13 @@ void ConnectionsStandardImpl::clear() {
   n_dets = 0;
   n_dets_prev = 0;
   cached_connections.clear();
-  unique_alphas.clear();
-  unique_betas.clear();
-  unique_ab_m1.clear();
-  singles_from_alpha.clear();
-  singles_from_beta.clear();
-  alpha_major_to_beta.clear();
-  alpha_major_to_det.clear();
-  alpha_major_to_det2.clear();
+  alpha_to_id.clear();
+  beta_to_id.clear();
+  abm1_to_ids.clear();
+  alpha_id_to_single_ids.clear();
+  beta_id_to_single_ids.clear();
+  alpha_id_to_beta_ids.clear();
+  alpha_id_to_det_ids.clear();
   beta_major_to_alpha.clear();
   beta_major_to_det.clear();
   beta_major_to_det2.clear();
@@ -130,14 +129,14 @@ void ConnectionsStandardImpl::update() {
 
   // Construct helper lists.
   update_abdet();
-  assert(unique_ab_m1.empty());
+  assert(abm1_to_ids.empty());
   update_abm1();
-  if (verbose) printf("abm1 size: %zu\n", unique_ab_m1.size());
-  singles_from_alpha.clear();
-  singles_from_beta.clear();
+  if (verbose) printf("abm1 size: %zu\n", abm1_to_ids.size());
+  alpha_id_to_single_ids.clear();
+  beta_id_to_single_ids.clear();
   update_absingles();
-  if (verbose) printf("absingles size: %zu\n", singles_from_alpha.size());
-  unique_ab_m1.clear();
+  if (verbose) printf("absingles size: %zu\n", alpha_id_to_single_ids.size());
+  abm1_to_ids.clear();
 
   cached_connections.resize(n_dets);
   cache_status.assign(n_dets, CACHE_OUTDATED);
@@ -169,7 +168,7 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
 
   // Single or double alpha excitations.
   const auto& beta = det.dn().SerializeAsString();
-  const int beta_id = unique_betas[beta];
+  const int beta_id = beta_to_id[beta];
   const auto& alpha_dets = beta_major_to_det[beta_id];
   for (auto it = alpha_dets.begin(); it != alpha_dets.end(); it++) {
     const int alpha_det_id = *it;
@@ -182,8 +181,8 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
 
   // Single or double beta excitations.
   const auto& alpha = det.up().SerializeAsString();
-  const int alpha_id = unique_alphas[alpha];
-  const auto& beta_dets = alpha_major_to_det[alpha_id];
+  const int alpha_id = alpha_to_id[alpha];
+  const auto& beta_dets = alpha_id_to_det_ids[alpha_id];
   for (auto it = beta_dets.begin(); it != beta_dets.end(); it++) {
     const int beta_det_id = *it;
     if (beta_det_id < start_id) continue;
@@ -196,11 +195,11 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
   // Mixed double excitation.
   if (n_dets - n_dets_prev < -0.2 * n_dets) {
   } else {
-    const auto& alpha_singles = singles_from_alpha[alpha_id];
-    const auto& beta_singles = singles_from_beta[beta_id];
+    const auto& alpha_singles = alpha_id_to_single_ids[alpha_id];
+    const auto& beta_singles = beta_id_to_single_ids[beta_id];
     for (const auto alpha_single : alpha_singles) {
-      const auto& related_beta_ids = alpha_major_to_beta[alpha_single];
-      const auto& related_det_ids = alpha_major_to_det[alpha_single];
+      const auto& related_beta_ids = alpha_id_to_beta_ids[alpha_single];
+      const auto& related_det_ids = alpha_id_to_det_ids[alpha_single];
       const int n_related_dets = related_beta_ids.size();
       int ptr = 0;
       for (auto it = beta_singles.begin(); it != beta_singles.end(); it++) {
@@ -238,26 +237,26 @@ void ConnectionsStandardImpl::update_abdet() {
     // Obtain alpha id.
     const auto& alpha = det.up().SerializeAsString();
     int alpha_id;
-    if (unique_alphas.count(alpha) == 0) {
-      alpha_id = unique_alphas.size();
-      unique_alphas[alpha] = alpha_id;
+    if (alpha_to_id.count(alpha) == 0) {
+      alpha_id = alpha_to_id.size();
+      alpha_to_id[alpha] = alpha_id;
     } else {
-      alpha_id = unique_alphas[alpha];
+      alpha_id = alpha_to_id[alpha];
     }
 
     // Obtain beta id.
     const auto& beta = det.dn().SerializeAsString();
     int beta_id;
-    if (unique_betas.count(beta) == 0) {
-      beta_id = unique_betas.size();
-      unique_betas[beta] = beta_id;
+    if (beta_to_id.count(beta) == 0) {
+      beta_id = beta_to_id.size();
+      beta_to_id[beta] = beta_id;
     } else {
-      beta_id = unique_betas[beta];
+      beta_id = beta_to_id[beta];
     }
 
     // Update alpha/beta to det info.
-    alpha_major_to_beta[alpha_id].push_back(beta_id);
-    alpha_major_to_det[alpha_id].push_back(i);
+    alpha_id_to_beta_ids[alpha_id].push_back(beta_id);
+    alpha_id_to_det_ids[alpha_id].push_back(i);
     alpha_major_to_det2[alpha_id].push_back(i);
     beta_major_to_alpha[beta_id].push_back(alpha_id);
     beta_major_to_det[beta_id].push_back(i);
@@ -268,7 +267,8 @@ void ConnectionsStandardImpl::update_abdet() {
 
   // Sort updated alpha/beta to det info.
   for (const int alpha_id : updated_alphas) {
-    sort_by_first(alpha_major_to_beta[alpha_id], alpha_major_to_det[alpha_id]);
+    sort_by_first(
+        alpha_id_to_beta_ids[alpha_id], alpha_id_to_det_ids[alpha_id]);
   }
   for (const int beta_id : updated_betas) {
     sort_by_first(beta_major_to_alpha[beta_id], beta_major_to_det[beta_id]);
@@ -283,14 +283,14 @@ void ConnectionsStandardImpl::update_abm1() {
 
     // Update alpha m1.
     const auto& alpha = det.up().SerializeAsString();
-    const int alpha_id = unique_alphas[alpha];
+    const int alpha_id = alpha_to_id[alpha];
     if (updated_alphas.count(alpha_id) == 0) {
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
       data::SpinDeterminant det_up(det.up());
       for (int j = 0; j < n_up; j++) {
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
         const auto& alpha_m1 = det_up.SerializeAsString();
-        unique_ab_m1[alpha_m1].first.push_back(alpha_id);
+        abm1_to_ids[alpha_m1].first.push_back(alpha_id);
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
       }
       updated_alphas.insert(alpha_id);
@@ -298,14 +298,14 @@ void ConnectionsStandardImpl::update_abm1() {
 
     // Update beta m1.
     const auto& beta = det.dn().SerializeAsString();
-    const int beta_id = unique_betas[beta];
+    const int beta_id = beta_to_id[beta];
     if (updated_betas.count(beta_id) == 0) {
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
       data::SpinDeterminant det_dn(det.dn());
       for (int j = 0; j < n_dn; j++) {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
-        unique_ab_m1[beta_m1].second.push_back(beta_id);
+        abm1_to_ids[beta_m1].second.push_back(beta_id);
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
       }
       updated_betas.insert(beta_id);
@@ -321,16 +321,16 @@ void ConnectionsStandardImpl::update_absingles() {
 
     // Update alpha singles.
     const auto& alpha = det.up().SerializeAsString();
-    const int alpha_id = unique_alphas[alpha];
+    const int alpha_id = alpha_to_id[alpha];
     if (updated_alphas.count(alpha_id) == 0) {
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
       data::SpinDeterminant det_up(det.up());
       for (int j = 0; j < n_up; j++) {
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
         const auto& alpha_m1 = det_up.SerializeAsString();
-        for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
-          singles_from_alpha[alpha_id].push_back(alpha_single);
-          singles_from_alpha[alpha_single].push_back(alpha_id);
+        for (const int alpha_single : abm1_to_ids[alpha_m1].first) {
+          alpha_id_to_single_ids[alpha_id].push_back(alpha_single);
+          alpha_id_to_single_ids[alpha_single].push_back(alpha_id);
         }
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
       }
@@ -339,16 +339,16 @@ void ConnectionsStandardImpl::update_absingles() {
 
     // Update beta singles.
     const auto& beta = det.dn().SerializeAsString();
-    const int beta_id = unique_betas[beta];
+    const int beta_id = beta_to_id[beta];
     if (updated_betas.count(beta_id) == 0) {
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
       data::SpinDeterminant det_dn(det.dn());
       for (int j = 0; j < n_dn; j++) {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
-        for (const int beta_single : unique_ab_m1[beta_m1].second) {
-          singles_from_beta[beta_id].push_back(beta_single);
-          singles_from_beta[beta_single].push_back(beta_id);
+        for (const int beta_single : abm1_to_ids[beta_m1].second) {
+          beta_id_to_single_ids[beta_id].push_back(beta_single);
+          beta_id_to_single_ids[beta_single].push_back(beta_id);
         }
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
       }
@@ -358,10 +358,10 @@ void ConnectionsStandardImpl::update_absingles() {
 
   // Sort updated alpha/beta singles and keep uniques.
   for (const int alpha_id : updated_alphas) {
-    sort_and_keep_uniques(singles_from_alpha[alpha_id]);
+    sort_and_keep_uniques(alpha_id_to_single_ids[alpha_id]);
   }
   for (const int beta_id : updated_betas) {
-    sort_and_keep_uniques(singles_from_beta[beta_id]);
+    sort_and_keep_uniques(beta_id_to_single_ids[beta_id]);
   }
 }
 
