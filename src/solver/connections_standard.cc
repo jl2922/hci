@@ -122,9 +122,12 @@ void ConnectionsStandardImpl::update() {
   assert(unique_ab_m1.empty());
   update_abm1();
   singles_from_alpha.clear();
+  singles_from_alpha.shrink_to_fit();
   singles_from_beta.clear();
+  singles_from_beta.shrink_to_fit();
   update_absingles();
   unique_ab_m1.clear();
+  unique_ab_m1.rehash(1);
 
   cached_connections.resize(n_dets);
   cache_status.assign(n_dets, CACHE_OUTDATED);
