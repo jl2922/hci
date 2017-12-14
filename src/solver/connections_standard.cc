@@ -135,7 +135,6 @@ void ConnectionsStandardImpl::update() {
   singles_from_alpha.clear();
   singles_from_beta.clear();
   update_absingles();
-  printf("abm1 size: %zu\n", unique_ab_m1.size());
   unique_ab_m1.clear();
 
   cached_connections.resize(n_dets);
@@ -146,9 +145,6 @@ void ConnectionsStandardImpl::update() {
     const int thread_id = omp_get_thread_num();
     one_up[thread_id].assign(n_dets, false);
   }
-
-  printf("ab size: %zu\n", unique_alphas.size());
-  printf("absingles size: %zu\n", singles_from_alpha.size());
 }
 
 std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
