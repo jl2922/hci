@@ -314,7 +314,8 @@ void ConnectionsStandardImpl::update_abm1() {
 void ConnectionsStandardImpl::update_absingles() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
-  for (int i = 0; i < n_dets; i++) {
+
+  for (int i = n_dets - 1; i >= 0; i--) {
     const auto& det = abstract_system->wf->terms(i).det();
 
     // Update alpha singles.
@@ -329,6 +330,9 @@ void ConnectionsStandardImpl::update_absingles() {
         if (unique_ab_m1.count(alpha_m1) == 1) {
           for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
             if (alpha_single == alpha_id) continue;
+            if (i >= n_dets_prev && updated_alphas.count(alpha_single) == 1) {
+              continue;
+            }
             singles_from_alpha[alpha_id].push_back(alpha_single);
             singles_from_alpha[alpha_single].push_back(alpha_id);
           }
@@ -350,6 +354,9 @@ void ConnectionsStandardImpl::update_absingles() {
         if (unique_ab_m1.count(beta_m1) == 1) {
           for (const int beta_single : unique_ab_m1[beta_m1].second) {
             if (beta_single == beta_id) continue;
+            if (i >= n_dets_prev && updated_betas.count(beta_single) == 1) {
+              continue;
+            }
             singles_from_beta[beta_id].push_back(beta_single);
             singles_from_beta[beta_single].push_back(beta_id);
           }
@@ -362,10 +369,13 @@ void ConnectionsStandardImpl::update_absingles() {
 
   // Sort updated alpha/beta singles and keep uniques.
   for (const int alpha_id : updated_alphas) {
-    sort_and_keep_uniques(singles_from_alpha[alpha_id]);
+    std::sort(
+        singles_from_alpha[alpha_id].begin(),
+        singles_from_alpha[alpha_id].end());
   }
   for (const int beta_id : updated_betas) {
-    sort_and_keep_uniques(singles_from_beta[beta_id]);
+    std::sort(
+        singles_from_beta[beta_id].begin(), singles_from_beta[beta_id].end());
   }
 }
 
