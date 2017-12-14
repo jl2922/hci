@@ -158,7 +158,6 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
   }
 
   std::vector<std::pair<int, double>>& res = cached_connections[i];
-  // if (i > 10) return res;
   const auto& det = abstract_system->wf->terms(i).det();
   const bool is_new_det = i >= n_dets_prev;
 
@@ -181,7 +180,6 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(alpha_det_id, H));
   }
-  // printf("res[%d] size after alpha: %zu\n", i, res.size());
 
   // Single or double beta excitations.
   const auto& alpha = det.up().SerializeAsString();
@@ -195,41 +193,34 @@ std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(beta_det_id, H));
   }
-  // printf("res[%d] size after beta: %zu\n", i, res.size());
 
   // Mixed double excitation.
-  if (n_dets - n_dets_prev < -0.2 * n_dets) {
-  } else {
-    const auto& alpha_singles = singles_from_alpha[alpha_id];
-    const auto& beta_singles = singles_from_beta[beta_id];
-    for (const auto alpha_single : alpha_singles) {
-      // if (i == 1) printf("\nA:%d ", alpha_single);
-      const auto& related_beta_ids = alpha_major_to_beta[alpha_single];
-      const auto& related_det_ids = alpha_major_to_det[alpha_single];
-      const int n_related_dets = related_beta_ids.size();
-      int ptr = 0;
-      for (auto it = beta_singles.begin(); it != beta_singles.end(); it++) {
-        const int beta_single = *it;
-        // if (i == 1) printf("B:%d ", beta_single);
-        while (ptr < n_related_dets && related_beta_ids[ptr] < beta_single) {
-          ptr++;
-        }
-        if (ptr == n_related_dets) break;
+  const auto& alpha_singles = singles_from_alpha[alpha_id];
+  const auto& beta_singles = singles_from_beta[beta_id];
+  for (const auto alpha_single : alpha_singles) {
+    const auto& related_beta_ids = alpha_major_to_beta[alpha_single];
+    const auto& related_det_ids = alpha_major_to_det[alpha_single];
+    const int n_related_dets = related_beta_ids.size();
+    int ptr = 0;
+    for (auto it = beta_singles.begin(); it != beta_singles.end(); it++) {
+      const int beta_single = *it;
+      while (ptr < n_related_dets && related_beta_ids[ptr] < beta_single) {
+        ptr++;
+      }
+      if (ptr == n_related_dets) break;
 
-        if (related_beta_ids[ptr] == beta_single) {
-          const int related_det_id = related_det_ids[ptr];
-          ptr++;
-          if (related_det_id < start_id) continue;
-          const auto& related_det =
-              abstract_system->wf->terms(related_det_id).det();
-          const double H = abstract_system->hamiltonian(&det, &related_det);
-          if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-          res.push_back(std::make_pair(related_det_id, H));
-        }
+      if (related_beta_ids[ptr] == beta_single) {
+        const int related_det_id = related_det_ids[ptr];
+        ptr++;
+        if (related_det_id < start_id) continue;
+        const auto& related_det =
+            abstract_system->wf->terms(related_det_id).det();
+        const double H = abstract_system->hamiltonian(&det, &related_det);
+        if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+        res.push_back(std::make_pair(related_det_id, H));
       }
     }
   }
-  // printf("res[%d] size final: %zu\n", i, res.size());
 
   cache_status[i] = CACHED;
 
@@ -335,9 +326,12 @@ void ConnectionsStandardImpl::update_absingles() {
       for (int j = 0; j < n_up; j++) {
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
         const auto& alpha_m1 = det_up.SerializeAsString();
-        for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
-          singles_from_alpha[alpha_id].push_back(alpha_single);
-          singles_from_alpha[alpha_single].push_back(alpha_id);
+        if (unique_ab_m1.count(alpha_m1) == 1) {
+          for (const int alpha_single : unique_ab_m1[alpha_m1].first) {
+            if (alpha_single == alpha_id) continue;
+            singles_from_alpha[alpha_id].push_back(alpha_single);
+            singles_from_alpha[alpha_single].push_back(alpha_id);
+          }
         }
         SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
       }
@@ -353,9 +347,12 @@ void ConnectionsStandardImpl::update_absingles() {
       for (int j = 0; j < n_dn; j++) {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
-        for (const int beta_single : unique_ab_m1[beta_m1].second) {
-          singles_from_beta[beta_id].push_back(beta_single);
-          singles_from_beta[beta_single].push_back(beta_id);
+        if (unique_ab_m1.count(beta_m1) == 1) {
+          for (const int beta_single : unique_ab_m1[beta_m1].second) {
+            if (beta_single == beta_id) continue;
+            singles_from_beta[beta_id].push_back(beta_single);
+            singles_from_beta[beta_single].push_back(beta_id);
+          }
         }
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
       }
