@@ -346,6 +346,7 @@ void ConnectionsStandardImpl::update_absingles() {
       for (int j = 0; j < n_dn; j++) {
         SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
         const auto& beta_m1 = det_dn.SerializeAsString();
+        if (abm1_to_ids.count(beta_m1) == 0) continue;
         for (const int beta_single : abm1_to_ids[beta_m1].second) {
           beta_id_to_single_ids[beta_id].push_back(beta_single);
           beta_id_to_single_ids[beta_single].push_back(beta_id);
