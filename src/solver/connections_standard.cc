@@ -131,11 +131,11 @@ void ConnectionsStandardImpl::update() {
   update_abdet();
   assert(abm1_to_ids.empty());
   update_abm1();
-  if (verbose) printf("abm1 size: %zu\n", abm1_to_ids.size());
+  if (verbose) printf("abm1 size: %'zu\n", abm1_to_ids.size());
   alpha_id_to_single_ids.clear();
   beta_id_to_single_ids.clear();
   update_absingles();
-  if (verbose) printf("absingles size: %zu\n", alpha_id_to_single_ids.size());
+  if (verbose) printf("absingles size: %'zu\n", alpha_id_to_single_ids.size());
   abm1_to_ids.clear();
 
   cached_connections.resize(n_dets);
