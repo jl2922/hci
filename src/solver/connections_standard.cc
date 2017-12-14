@@ -49,9 +49,9 @@ class ConnectionsStandardImpl : public Connections {
   std::unordered_map<std::string, std::pair<std::vector<int>, std::vector<int>>>
       unique_ab_m1;
 
-  std::unordered_map<int, std::vector<int>> singles_from_alpha;
+  std::vector<std::vector<int>> singles_from_alpha;
 
-  std::unordered_map<int, std::vector<int>> singles_from_beta;
+  std::vector<std::vector<int>> singles_from_beta;
 
   // Sorted by unique beta id.
   std::unordered_map<int, std::vector<int>> alpha_major_to_beta;
@@ -59,17 +59,11 @@ class ConnectionsStandardImpl : public Connections {
   // Sorted by unique beta id.
   std::unordered_map<int, std::vector<int>> alpha_major_to_det;
 
-  // Sorted by det id.
-  std::unordered_map<int, std::vector<int>> alpha_major_to_det2;
-
   // Sorted by unique alpha id.
   std::unordered_map<int, std::vector<int>> beta_major_to_alpha;
 
   // Sorted by unique alpha id.
   std::unordered_map<int, std::vector<int>> beta_major_to_det;
-
-  // Sorted by det id.
-  std::unordered_map<int, std::vector<int>> beta_major_to_det2;
 
   // Reusing an array of n_dets false values for efficiency.
   std::vector<std::vector<bool>> one_up;
@@ -85,9 +79,6 @@ class ConnectionsStandardImpl : public Connections {
 
   // Update alpha/beta singles lists.
   void update_absingles();
-
-  // Sort the given vector and remove duplicated elements.
-  void sort_and_keep_uniques(std::vector<int>& vec);
 };
 
 constexpr uint8_t ConnectionsStandardImpl::CACHED;
@@ -310,7 +301,8 @@ void ConnectionsStandardImpl::update_abm1() {
 void ConnectionsStandardImpl::update_absingles() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
-
+  singles_from_alpha.resize(unique_alphas.size());
+  singles_from_beta.resize(unique_betas.size());
   for (int i = n_dets - 1; i >= 0; i--) {
     const auto& det = abstract_system->wf->terms(i).det();
 
@@ -389,19 +381,6 @@ void ConnectionsStandardImpl::sort_by_first(
     vec1[i] = vec[i].first;
     vec2[i] = vec[i].second;
   }
-}
-
-void ConnectionsStandardImpl::sort_and_keep_uniques(std::vector<int>& vec) {
-  std::unordered_set<int> unique_elems;
-  for (const int elem : vec) {
-    unique_elems.insert(elem);
-  }
-  vec.clear();
-  vec.reserve(unique_elems.size());
-  for (const int elem : unique_elems) {
-    vec.push_back(elem);
-  }
-  std::sort(vec.begin(), vec.end());
 }
 
 Connections* Injector::new_connections(
