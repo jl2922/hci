@@ -3,7 +3,7 @@ CXX := mpic++
 CXX_WARNING_OPTIONS := -Wall -Wextra -Wno-expansion-to-defined -Wno-int-in-bool-context
 CXX_MALLOC_OPTIONS := -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 CXX_ARCH_TUNE := -march='native' -mtune='native' # Needs recompile on different CPU models.
-CXXFLAGS := -std=c++17 -O3 -fopenmp $(CXX_ARCH_TUNE) $(CXX_WARNING_OPTIONS) $(CXX_MALLOC_OPTIONS)
+CXXFLAGS := -std=c++17 -g -O3 -fopenmp $(CXX_ARCH_TUNE) $(CXX_WARNING_OPTIONS) $(CXX_MALLOC_OPTIONS)
 LDLIBS := -pthread -lboost_mpi -lboost_serialization -lprotobuf -lpthread
 SRC_DIR := src
 OBJ_DIR := build

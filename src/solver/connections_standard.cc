@@ -54,16 +54,16 @@ class ConnectionsStandardImpl : public Connections {
   std::vector<std::vector<int>> singles_from_beta;
 
   // Sorted by unique beta id.
-  std::unordered_map<int, std::vector<int>> alpha_major_to_beta;
+  std::vector<std::vector<int>> alpha_major_to_beta;
 
   // Sorted by unique beta id.
-  std::unordered_map<int, std::vector<int>> alpha_major_to_det;
+  std::vector<std::vector<int>> alpha_major_to_det;
 
   // Sorted by unique alpha id.
-  std::unordered_map<int, std::vector<int>> beta_major_to_alpha;
+  std::vector<std::vector<int>> beta_major_to_alpha;
 
   // Sorted by unique alpha id.
-  std::unordered_map<int, std::vector<int>> beta_major_to_det;
+  std::vector<std::vector<int>> beta_major_to_det;
 
   // Reusing an array of n_dets false values for efficiency.
   std::vector<std::vector<bool>> one_up;
@@ -107,10 +107,8 @@ void ConnectionsStandardImpl::clear() {
   singles_from_beta.clear();
   alpha_major_to_beta.clear();
   alpha_major_to_det.clear();
-  alpha_major_to_det2.clear();
   beta_major_to_alpha.clear();
   beta_major_to_det.clear();
-  beta_major_to_det2.clear();
   cache_status.clear();
 }
 
@@ -226,6 +224,8 @@ void ConnectionsStandardImpl::update_abdet() {
     if (unique_alphas.count(alpha) == 0) {
       alpha_id = unique_alphas.size();
       unique_alphas[alpha] = alpha_id;
+      alpha_major_to_beta.resize(alpha_id + 1);
+      alpha_major_to_det.resize(alpha_id + 1);
     } else {
       alpha_id = unique_alphas[alpha];
     }
@@ -236,6 +236,8 @@ void ConnectionsStandardImpl::update_abdet() {
     if (unique_betas.count(beta) == 0) {
       beta_id = unique_betas.size();
       unique_betas[beta] = beta_id;
+      beta_major_to_alpha.resize(beta_id + 1);
+      beta_major_to_det.resize(beta_id + 1);
     } else {
       beta_id = unique_betas[beta];
     }
@@ -243,10 +245,8 @@ void ConnectionsStandardImpl::update_abdet() {
     // Update alpha/beta to det info.
     alpha_major_to_beta[alpha_id].push_back(beta_id);
     alpha_major_to_det[alpha_id].push_back(i);
-    alpha_major_to_det2[alpha_id].push_back(i);
     beta_major_to_alpha[beta_id].push_back(alpha_id);
     beta_major_to_det[beta_id].push_back(i);
-    beta_major_to_det2[beta_id].push_back(i);
     updated_alphas.insert(alpha_id);
     updated_betas.insert(beta_id);
   }
@@ -295,6 +295,15 @@ void ConnectionsStandardImpl::update_abm1() {
       }
       updated_betas.insert(beta_id);
     }
+  }
+  if (verbose) {
+    printf("Outer size of abm1: %'zu\n", unique_ab_m1.size());
+    unsigned long long abm1_size = 0;
+    for (const auto& item : unique_ab_m1) {
+      abm1_size += item.second.first.size();
+      abm1_size += item.second.second.size();
+    }
+    printf("Full size of abm1: %'llu\n", abm1_size);
   }
 }
 
@@ -356,15 +365,19 @@ void ConnectionsStandardImpl::update_absingles() {
   }
 
   // Sort updated alpha/beta singles and keep uniques.
+  unsigned long long singles_cnt = 0;
   for (const int alpha_id : updated_alphas) {
     std::sort(
         singles_from_alpha[alpha_id].begin(),
         singles_from_alpha[alpha_id].end());
+    singles_cnt += singles_from_alpha[alpha_id].size();
   }
   for (const int beta_id : updated_betas) {
     std::sort(
         singles_from_beta[beta_id].begin(), singles_from_beta[beta_id].end());
+    singles_cnt += singles_from_beta[beta_id].size();
   }
+  if (verbose) printf("Full size of absingles: %'llu\n", singles_cnt);
 }
 
 void ConnectionsStandardImpl::sort_by_first(
