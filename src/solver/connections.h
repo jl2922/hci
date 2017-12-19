@@ -17,7 +17,8 @@ class Connections {
 
   virtual void clear() = 0;
 
-  virtual std::vector<std::pair<int, double>> get_connections(const int i) = 0;
+  virtual std::vector<std::pair<int, double>> get_connections(
+      const int det_id) = 0;
 
  protected:
   Session* const session;

@@ -21,7 +21,8 @@ class ConnectionsStandardImpl : public Connections {
 
   void clear() override;
 
-  std::vector<std::pair<int, double>> get_connections(const int i) override;
+  std::vector<std::pair<int, double>> get_connections(
+      const int det_id) override;
 
  private:
   int n_dets = 0;
@@ -31,12 +32,6 @@ class ConnectionsStandardImpl : public Connections {
   int n_up = 0;
 
   int n_dn = 0;
-
-  static constexpr uint8_t CACHED = 1;
-
-  static constexpr uint8_t CACHE_OUTDATED = 2;
-
-  std::vector<uint8_t> cache_status;
 
   std::vector<std::vector<std::pair<int, double>>> sparse_hamiltonian;
 
@@ -76,10 +71,9 @@ class ConnectionsStandardImpl : public Connections {
 
   // Update alpha/beta singles lists.
   void update_absingles();
-};
 
-constexpr uint8_t ConnectionsStandardImpl::CACHED;
-constexpr uint8_t ConnectionsStandardImpl::CACHE_OUTDATED;
+  void update_hamiltonian(const int det_id);
+};
 
 ConnectionsStandardImpl::ConnectionsStandardImpl(
     Session* const session, AbstractSystem* const abstract_system)
@@ -105,7 +99,6 @@ void ConnectionsStandardImpl::clear() {
   alpha_id_to_det_ids.clear();
   beta_id_to_alpha_ids.clear();
   beta_id_to_det_ids.clear();
-  cache_status.clear();
 }
 
 void ConnectionsStandardImpl::update() {
@@ -123,84 +116,34 @@ void ConnectionsStandardImpl::update() {
   session->get_timer()->checkpoint("updated absingles");
   abm1_to_ab_ids.clear();
 
+  // Generate hamiltonian.
   sparse_hamiltonian.resize(n_dets);
-  cache_status.assign(n_dets, CACHE_OUTDATED);
-}
-
-std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
-    const int i) {
-  if (cache_status[i] == CACHED) {
-    return sparse_hamiltonian[i];
+  Parallel* const parallel = session->get_parallel();
+  const int proc_id = parallel->get_proc_id();
+  const int n_procs = parallel->get_n_procs();
+  double target_progress = 0.01;
+  if (verbose) {
+    printf("Updating hamiltonian: ");
+    fflush(stdout);
   }
-
-  std::vector<std::pair<int, double>>& res = sparse_hamiltonian[i];
-  const auto& det = abstract_system->wf->terms(i).det();
-  const bool is_new_det = i >= n_dets_prev;
-
-  if (is_new_det) {
-    const double H = abstract_system->hamiltonian(&det, &det);
-    res.push_back(std::make_pair(i, H));
-  }
-
-  const int start_id = is_new_det ? i + 1 : n_dets_prev;
-
-  // Single or double alpha excitations.
-  const auto& beta = det.dn().SerializeAsString();
-  const int beta_id = beta_to_id[beta];
-  const auto& alpha_dets = beta_id_to_det_ids[beta_id];
-  for (auto it = alpha_dets.begin(); it != alpha_dets.end(); it++) {
-    const int alpha_det_id = *it;
-    if (alpha_det_id < start_id) continue;
-    const auto& alpha_det = abstract_system->wf->terms(alpha_det_id).det();
-    const double H = abstract_system->hamiltonian(&det, &alpha_det);
-    if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-    res.push_back(std::make_pair(alpha_det_id, H));
-  }
-
-  // Single or double beta excitations.
-  const auto& alpha = det.up().SerializeAsString();
-  const int alpha_id = alpha_to_id[alpha];
-  const auto& beta_dets = alpha_id_to_det_ids[alpha_id];
-  for (auto it = beta_dets.begin(); it != beta_dets.end(); it++) {
-    const int beta_det_id = *it;
-    if (beta_det_id < start_id) continue;
-    const auto& beta_det = abstract_system->wf->terms(beta_det_id).det();
-    const double H = abstract_system->hamiltonian(&det, &beta_det);
-    if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-    res.push_back(std::make_pair(beta_det_id, H));
-  }
-
-  // Mixed double excitation.
-  const auto& alpha_singles = alpha_id_to_single_ids[alpha_id];
-  const auto& beta_singles = beta_id_to_single_ids[beta_id];
-  for (const auto alpha_single : alpha_singles) {
-    const auto& related_beta_ids = alpha_id_to_beta_ids[alpha_single];
-    const auto& related_det_ids = alpha_id_to_det_ids[alpha_single];
-    const int n_related_dets = related_beta_ids.size();
-    int ptr = 0;
-    for (auto it = beta_singles.begin(); it != beta_singles.end(); it++) {
-      const int beta_single = *it;
-      while (ptr < n_related_dets && related_beta_ids[ptr] < beta_single) {
-        ptr++;
-      }
-      if (ptr == n_related_dets) break;
-
-      if (related_beta_ids[ptr] == beta_single) {
-        const int related_det_id = related_det_ids[ptr];
-        ptr++;
-        if (related_det_id < start_id) continue;
-        const auto& related_det =
-            abstract_system->wf->terms(related_det_id).det();
-        const double H = abstract_system->hamiltonian(&det, &related_det);
-        if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-        res.push_back(std::make_pair(related_det_id, H));
+#pragma omp parallel for schedule(dynamic, 10)
+  for (int i = proc_id; i < n_dets; i += n_procs) {
+    update_hamiltonian(i);
+    if (verbose && omp_get_thread_num() == 0) {
+      if (i > target_progress * n_dets) {
+        printf("%.0f%% ", target_progress * 100);
+        fflush(stdout);
+        target_progress *= 2;
       }
     }
   }
+  if (verbose) printf("\n");
+  session->get_timer()->checkpoint("updated hamiltonian");
+}
 
-  cache_status[i] = CACHED;
-
-  return res;
+std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
+    const int det_id) {
+  return sparse_hamiltonian[det_id];
 }
 
 void ConnectionsStandardImpl::update_abdet() {
@@ -377,6 +320,73 @@ void ConnectionsStandardImpl::update_absingles() {
         alpha_id_to_single_ids.size(),
         beta_id_to_single_ids.size());
     printf("Full size of absingles: %'llu\n", singles_cnt);
+  }
+}
+
+void ConnectionsStandardImpl::update_hamiltonian(const int det_id) {
+  std::vector<std::pair<int, double>>& res = sparse_hamiltonian[det_id];
+  const auto& det = abstract_system->wf->terms(det_id).det();
+  const bool is_new_det = det_id >= n_dets_prev;
+
+  if (is_new_det) {
+    const double H = abstract_system->hamiltonian(&det, &det);
+    res.push_back(std::make_pair(det_id, H));
+  }
+
+  const int start_id = is_new_det ? det_id + 1 : n_dets_prev;
+
+  // Single or double alpha excitations.
+  const auto& beta = det.dn().SerializeAsString();
+  const int beta_id = beta_to_id[beta];
+  const auto& alpha_dets = beta_id_to_det_ids[beta_id];
+  for (auto it = alpha_dets.begin(); it != alpha_dets.end(); it++) {
+    const int alpha_det_id = *it;
+    if (alpha_det_id < start_id) continue;
+    const auto& alpha_det = abstract_system->wf->terms(alpha_det_id).det();
+    const double H = abstract_system->hamiltonian(&det, &alpha_det);
+    if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+    res.push_back(std::make_pair(alpha_det_id, H));
+  }
+
+  // Single or double beta excitations.
+  const auto& alpha = det.up().SerializeAsString();
+  const int alpha_id = alpha_to_id[alpha];
+  const auto& beta_dets = alpha_id_to_det_ids[alpha_id];
+  for (auto it = beta_dets.begin(); it != beta_dets.end(); it++) {
+    const int beta_det_id = *it;
+    if (beta_det_id < start_id) continue;
+    const auto& beta_det = abstract_system->wf->terms(beta_det_id).det();
+    const double H = abstract_system->hamiltonian(&det, &beta_det);
+    if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+    res.push_back(std::make_pair(beta_det_id, H));
+  }
+
+  // Mixed double excitation.
+  const auto& alpha_singles = alpha_id_to_single_ids[alpha_id];
+  const auto& beta_singles = beta_id_to_single_ids[beta_id];
+  for (const auto alpha_single : alpha_singles) {
+    const auto& related_beta_ids = alpha_id_to_beta_ids[alpha_single];
+    const auto& related_det_ids = alpha_id_to_det_ids[alpha_single];
+    const int n_related_dets = related_beta_ids.size();
+    int ptr = 0;
+    for (auto it = beta_singles.begin(); it != beta_singles.end(); it++) {
+      const int beta_single = *it;
+      while (ptr < n_related_dets && related_beta_ids[ptr] < beta_single) {
+        ptr++;
+      }
+      if (ptr == n_related_dets) break;
+
+      if (related_beta_ids[ptr] == beta_single) {
+        const int related_det_id = related_det_ids[ptr];
+        ptr++;
+        if (related_det_id < start_id) continue;
+        const auto& related_det =
+            abstract_system->wf->terms(related_det_id).det();
+        const double H = abstract_system->hamiltonian(&det, &related_det);
+        if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
+        res.push_back(std::make_pair(related_det_id, H));
+      }
+    }
   }
 }
 

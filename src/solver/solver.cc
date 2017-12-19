@@ -187,7 +187,7 @@ void SolverImpl::variation(const double eps_var) {
 
     // Diagonalize.
     connections->update();
-    timer->checkpoint("updated helpers");
+    timer->checkpoint("updated connections");
     std::vector<double> diagonal(n_total_dets, 0.0);
     for (int i = 0; i < n_total_dets; i++) {
       const auto& det_i = wf->terms(i).det();
@@ -315,53 +315,43 @@ std::vector<double> SolverImpl::apply_hamiltonian(
   const int proc_id = parallel->get_proc_id();
   const int n_procs = parallel->get_n_procs();
   const int n_threads = parallel->get_n_threads();
-  std::vector<double> res(n_dets, 0.0);
+  std::vector<std::vector<double>> res(n_threads);
+  for (int i = 0; i < n_threads; i++) res[i].resize(n_dets, 0.0);
   std::vector<unsigned long long> n_nonzero_elems(n_threads, 0);
 
-  double target_progress = 0.01;
-  if (verbose && first_iteration) {
-    printf("Applying hamiltonian: ");
-    fflush(stdout);
-  }
-#pragma omp parallel for reduction(vec_double_plus : res) schedule(dynamic, 10)
+#pragma omp parallel for
   for (int i = proc_id; i < n_dets; i += n_procs) {
     const int thread_id = omp_get_thread_num();
     const auto& conns = connections->get_connections(i);
     for (const auto conn : conns) {
       const int j = conn.first;
       const double H_ij = conn.second;
-      res[i] += H_ij * vec[j];
+      res[thread_id][i] += H_ij * vec[j];
       n_nonzero_elems[thread_id]++;
       if (i != j) {
-        res[j] += H_ij * vec[i];
+        res[thread_id][j] += H_ij * vec[i];
         n_nonzero_elems[thread_id] += 2;
       } else {
         n_nonzero_elems[thread_id]++;
       }
     }
-    if (verbose && first_iteration && thread_id == 0) {
-      if (i > target_progress * n_dets) {
-        printf("%.0f%% ", target_progress * 100);
-        fflush(stdout);
-        target_progress *= 2;
-      }
+  }
+
+  for (int i = 1; i < n_threads; i++) {
+    n_nonzero_elems[0] += n_nonzero_elems[i];
+    for (int j = 0; j < n_dets; j++) {
+      res[0][j] += res[i][j];
     }
   }
-  if (verbose && first_iteration) printf("\n");
-
-  parallel->reduce_to_sum(res);
-  unsigned long long total_nonzero_elems = 0;
-  for (int i = 0; i < n_threads; i++) {
-    total_nonzero_elems += n_nonzero_elems[i];
-  }
-  parallel->reduce_to_sum(total_nonzero_elems);
+  parallel->reduce_to_sum(res[0]);
+  parallel->reduce_to_sum(n_nonzero_elems[0]);
   if (verbose && first_iteration) {
-    printf("Number of non-zero elements: %'llu\n", total_nonzero_elems);
+    printf("Number of non-zero elements: %'llu\n", n_nonzero_elems[0]);
   }
 
   session->get_timer()->checkpoint("hamiltonian applied");
 
-  return res;
+  return res[0];
 };
 
 void SolverImpl::perturbation(
