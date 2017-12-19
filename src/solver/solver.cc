@@ -327,7 +327,6 @@ std::vector<double> SolverImpl::apply_hamiltonian(
       const int j = conn.first;
       const double H_ij = conn.second;
       res[thread_id][i] += H_ij * vec[j];
-      n_nonzero_elems[thread_id]++;
       if (i != j) {
         res[thread_id][j] += H_ij * vec[i];
         n_nonzero_elems[thread_id] += 2;
