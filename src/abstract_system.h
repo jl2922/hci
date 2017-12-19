@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 #include "data.pb.h"
 #include "session.h"
 
@@ -10,7 +12,8 @@ class AbstractSystem {
  public:
   AbstractSystem(Session* const session) : session(session) {}
 
-  std::unique_ptr<data::Wavefunction> wf;
+  std::vector<std::string> dets;
+  std::vector<double> coefs;
 
   virtual ~AbstractSystem() = default;
 
