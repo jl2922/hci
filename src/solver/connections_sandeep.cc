@@ -475,7 +475,7 @@ std::vector<std::pair<int, double>> ConnectionsSandeepImpl::get_connections(
   return res;
 }
 
-Connections* Injector::new_connections(
-    Session* const session, AbstractSystem* const abstract_system) {
-  return new ConnectionsSandeepImpl(session, abstract_system);
-}
+// Connections* Injector::new_connections(
+//     Session* const session, AbstractSystem* const abstract_system) {
+//   return new ConnectionsSandeepImpl(session, abstract_system);
+// }
