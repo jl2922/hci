@@ -371,7 +371,13 @@ void ConnectionsStandardImpl::update_absingles() {
     singles_cnt += beta_id_to_single_ids[beta_id].size();
   }
 
-  if (verbose) printf("Full size of absingles: %'llu\n", singles_cnt);
+  if (verbose) {
+    printf(
+        "Outer size of a/b singles: %'zu / %'zu\n",
+        alpha_id_to_single_ids.size(),
+        beta_id_to_single_ids.size());
+    printf("Full size of absingles: %'llu\n", singles_cnt);
+  }
 }
 
 void ConnectionsStandardImpl::sort_by_first(
