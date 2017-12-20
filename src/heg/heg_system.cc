@@ -17,8 +17,6 @@ class HEGSystemImpl : public HEGSystem {
 
   void setup(const double rcut) override;
 
-  int get_n_orbitals() const override;
-
   int get_n_orbitals(const double rcut) const override;
 
   double hamiltonian(
@@ -83,9 +81,7 @@ HEGSystemImpl::HEGSystemImpl(Session* const session) : HEGSystem(session) {
 }
 
 void HEGSystemImpl::setup(const double rcut) {
-  if (rcut <= 0 || rcut >= 127) {
-    throw std::invalid_argument("rcut must be between 0 to 127");
-  }
+  assert(rcut > 0 && rcut < 32);
   this->rcut = rcut;
 
   constexpr double PI = 3.14159265358979323846;
@@ -109,8 +105,6 @@ void HEGSystemImpl::setup(const double rcut) {
   // Evaluate HF energy.
   evaluate_energy_hf();
 }
-
-int HEGSystemImpl::get_n_orbitals() const { return k_points.size() * 2; }
 
 int HEGSystemImpl::get_n_orbitals(const double rcut) const {
   return KPointsUtil::get_n_k_points(rcut) * 2;
@@ -178,8 +172,8 @@ double HEGSystemImpl::hamiltonian(
       H -= H_unit / squared_norm(k_points[orb_p] - k_points[orb_s]);
     }
 
-    const auto& get_gamma_exp = [&](
-        const data::SpinDeterminant& spin_det, const std::vector<int>& eor) {
+    const auto& get_gamma_exp = [&](const data::SpinDeterminant& spin_det,
+                                    const std::vector<int>& eor) {
       int res = 0;
       for (const int orb : eor) {
         res += SpinDetUtil::get_n_lower_elecs(spin_det, orb);
@@ -259,8 +253,8 @@ void HEGSystemImpl::find_connected_dets(
 
   const int dn_offset = k_points.size();
 
-  const auto& is_occupied = [&](
-      const data::Determinant* const target_det, const int orb) {
+  const auto& is_occupied = [&](const data::Determinant* const target_det,
+                                const int orb) {
     if (orb < dn_offset) {
       return SpinDetUtil::is_occupied(target_det->up(), orb);
     } else {
@@ -268,15 +262,15 @@ void HEGSystemImpl::find_connected_dets(
     }
   };
 
-  const auto& set_occupation = [&](
-      data::Determinant* const target_det, const int orb, const bool occ) {
-    if (orb < dn_offset) {
-      SpinDetUtil::set_occupation(target_det->mutable_up(), orb, occ);
-    } else {
-      SpinDetUtil::set_occupation(
-          target_det->mutable_dn(), orb - dn_offset, occ);
-    }
-  };
+  const auto& set_occupation =
+      [&](data::Determinant* const target_det, const int orb, const bool occ) {
+        if (orb < dn_offset) {
+          SpinDetUtil::set_occupation(target_det->mutable_up(), orb, occ);
+        } else {
+          SpinDetUtil::set_occupation(
+              target_det->mutable_dn(), orb - dn_offset, occ);
+        }
+      };
 
   const auto& pq_handler = [&](const int p, const int q) {
     int pp = p, qq = q;

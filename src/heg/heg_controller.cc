@@ -40,6 +40,7 @@ void HEGControllerImpl::run() {
   if (session->get_config()->get_bool("variation_only")) return;
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
+
   run_all_perturbations();
 }
 
@@ -48,15 +49,14 @@ void HEGControllerImpl::run_all_variations() {
   Config* const config = session->get_config();
   rcut_vars = config->get_double_array("rcut_vars");
   eps_vars = config->get_double_array("eps_vars");
-
-  timer->start("variation");
   const int n_rcut_vars = rcut_vars.size();
   const int n_eps_vars = eps_vars.size();
 
+  timer->start("variation");
+
   // Check eps in decreasing order.
   for (int i = 1; i < n_eps_vars; i++) {
-    if (eps_vars[i] >= eps_vars[i - 1])
-      throw std::invalid_argument("eps_var must be in decreasing order");
+    assert(eps_vars[i] < eps_vars[i - 1]);
   }
 
   for (int i = 0; i < n_rcut_vars; i++) {
@@ -105,13 +105,10 @@ void HEGControllerImpl::run_all_perturbations() {
   timer->start("perturbation");
 
   for (int i = 1; i < n_eps_pts; i++) {
-    if (eps_pts[i] >= eps_pts[i - 1])
-      throw std::invalid_argument("eps_pts must be in decreasing order.");
+    assert(eps_pts[i] < eps_pts[i - 1]);
   }
-
   const double max_rcut_pt =
       *std::max_element(rcut_pts.begin(), rcut_pts.end());
-
   if (is_master) {
     printf("Maximum PT rcut: %#.4g\n", max_rcut_pt);
     printf("Minimum PT epsilon: %#.4g\n", eps_pts[n_eps_pts - 1]);

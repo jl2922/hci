@@ -17,8 +17,6 @@ class AbstractSystem {
 
   virtual ~AbstractSystem() = default;
 
-  virtual int get_n_orbitals() const = 0;
-
   virtual double hamiltonian(
       const data::Determinant* const det_pq,
       const data::Determinant* const det_rs) const = 0;

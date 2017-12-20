@@ -62,6 +62,8 @@ class ConnectionsImpl : public Connections {
 
   std::vector<data::Determinant> tmp_dets;
 
+  data::SpinDeterminant tmp_spin_det;
+
   // Sort both vectors by the first vector.
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
 
@@ -153,8 +155,7 @@ std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
 void ConnectionsImpl::update_abdet() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
-  const int thread_id = omp_get_thread_num();
-  auto& det = tmp_dets[thread_id];
+  auto& det = tmp_dets[0];
   for (int i = n_dets_prev; i < n_dets; i++) {
     det.ParseFromString(abstract_system->dets[i]);
 
@@ -204,8 +205,8 @@ void ConnectionsImpl::update_abdet() {
 void ConnectionsImpl::update_abm1() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
-  const int thread_id = omp_get_thread_num();
-  auto& det = tmp_dets[thread_id];
+  auto& det = tmp_dets[0];
+  auto& spin_det = tmp_spin_det;
   for (int i = n_dets_prev; i < n_dets; i++) {
     det.ParseFromString(abstract_system->dets[i]);
 
@@ -214,12 +215,12 @@ void ConnectionsImpl::update_abm1() {
     const int alpha_id = alpha_to_id[alpha];
     if (updated_alphas.count(alpha_id) == 0) {
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
-      data::SpinDeterminant det_up(det.up());
+      spin_det = det.up();
       for (int j = 0; j < n_up; j++) {
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
-        const auto& alpha_m1 = det_up.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], false);
+        const auto& alpha_m1 = spin_det.SerializeAsString();
         abm1_to_ab_ids[alpha_m1].first.push_back(alpha_id);
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], true);
       }
       updated_alphas.insert(alpha_id);
     }
@@ -229,12 +230,12 @@ void ConnectionsImpl::update_abm1() {
     const int beta_id = beta_to_id[beta];
     if (updated_betas.count(beta_id) == 0) {
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
-      data::SpinDeterminant det_dn(det.dn());
+      spin_det = det.dn();
       for (int j = 0; j < n_dn; j++) {
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
-        const auto& beta_m1 = det_dn.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], false);
+        const auto& beta_m1 = spin_det.SerializeAsString();
         abm1_to_ab_ids[beta_m1].second.push_back(beta_id);
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], true);
       }
       updated_betas.insert(beta_id);
     }
@@ -255,8 +256,8 @@ void ConnectionsImpl::update_absingles() {
   std::unordered_set<int> updated_betas;
   alpha_id_to_single_ids.resize(alpha_to_id.size());
   beta_id_to_single_ids.resize(beta_to_id.size());
-  const int thread_id = omp_get_thread_num();
-  auto& det = tmp_dets[thread_id];
+  auto& det = tmp_dets[0];
+  auto& spin_det = tmp_spin_det;
   for (int i = n_dets - 1; i >= 0; i--) {
     det.ParseFromString(abstract_system->dets[i]);
 
@@ -265,10 +266,10 @@ void ConnectionsImpl::update_absingles() {
     const int alpha_id = alpha_to_id[alpha];
     if (updated_alphas.count(alpha_id) == 0) {
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
-      data::SpinDeterminant det_up(det.up());
+      spin_det = det.up();
       for (int j = 0; j < n_up; j++) {
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
-        const auto& alpha_m1 = det_up.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], false);
+        const auto& alpha_m1 = spin_det.SerializeAsString();
         if (abm1_to_ab_ids.count(alpha_m1) == 1) {
           for (const int alpha_single : abm1_to_ab_ids[alpha_m1].first) {
             if (alpha_single == alpha_id) continue;
@@ -279,7 +280,7 @@ void ConnectionsImpl::update_absingles() {
             alpha_id_to_single_ids[alpha_single].push_back(alpha_id);
           }
         }
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], true);
       }
       updated_alphas.insert(alpha_id);
     }
@@ -289,10 +290,10 @@ void ConnectionsImpl::update_absingles() {
     const int beta_id = beta_to_id[beta];
     if (updated_betas.count(beta_id) == 0) {
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
-      data::SpinDeterminant det_dn(det.dn());
+      spin_det = det.dn();
       for (int j = 0; j < n_dn; j++) {
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
-        const auto& beta_m1 = det_dn.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], false);
+        const auto& beta_m1 = spin_det.SerializeAsString();
         if (abm1_to_ab_ids.count(beta_m1) == 1) {
           for (const int beta_single : abm1_to_ab_ids[beta_m1].second) {
             if (beta_single == beta_id) continue;
@@ -303,7 +304,7 @@ void ConnectionsImpl::update_absingles() {
             beta_id_to_single_ids[beta_single].push_back(beta_id);
           }
         }
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], true);
       }
       updated_betas.insert(beta_id);
     }

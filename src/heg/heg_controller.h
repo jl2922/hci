@@ -13,12 +13,6 @@ class HEGController {
 
   virtual ~HEGController() = default;
 
-  // Read config.
-  // For each rcut_var in rcut_vars:
-  //   Setup heg system.
-  //   Run Variation for each eps_var in eps_vars.
-  // For each rcut_var and eps_var:
-  //   Run perturbation.
   virtual void run() = 0;
 
  protected:
