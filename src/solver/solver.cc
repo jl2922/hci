@@ -70,19 +70,19 @@ class SolverImpl : public Solver {
 
   void print_var_result() const;
 
-  data::Determinant tmp_det;
+  std::vector<data::Determinant> tmp_dets;
 
   std::vector<double> get_energy_pts_pre_dtm(
-      const std::vector<int>& n_orbs_pts) const;
+      const std::vector<int>& n_orbs_pts);
 
   std::vector<UncertainResult> get_energy_pts_dtm(
       const std::vector<int>& n_orbs_pts,
-      const std::vector<double>& energy_pts_pre_dtm) const;
+      const std::vector<double>& energy_pts_pre_dtm);
 
   std::vector<std::vector<UncertainResult>> get_energy_pts_stc(
       const std::vector<int>& n_orbs_pts,
       const std::vector<double>& eps_pts,
-      const std::vector<UncertainResult>& energy_pts_dtm) const;
+      const std::vector<UncertainResult>& energy_pts_dtm);
 
   double get_weight(const int i) const;
 };
@@ -92,8 +92,10 @@ SolverImpl::SolverImpl(
     Connections* const connections,
     AbstractSystem* const abstract_system)
     : Solver(session, connections, abstract_system) {
-  verbose = session->get_parallel()->is_master();
+  Parallel* const parallel = session->get_parallel();
   Config* const config = session->get_config();
+  verbose = parallel->is_master();
+  tmp_dets.resize(parallel->get_n_threads());
   n_up = config->get_int("n_up");
   n_dn = config->get_int("n_dn");
 }
@@ -106,7 +108,7 @@ void SolverImpl::setup_hf() {
   abstract_system->coefs.clear();
 
   // Add a single term with coef 1.0 and no diffs.
-  auto& det_hf = tmp_det;
+  auto& det_hf = tmp_dets[0];
   det_hf.mutable_up()->set_n_hf_elecs(n_up);
   det_hf.mutable_dn()->set_n_hf_elecs(n_dn);
   abstract_system->dets.push_back(det_hf.SerializeAsString());
@@ -166,10 +168,11 @@ void SolverImpl::variation(const double eps_var) {
     const int n_old_dets = abstract_system->dets.size();
     for (int i = 0; i < n_old_dets; i++) {
       const double coef = abstract_system->coefs[i];
-      tmp_det.ParseFromString(abstract_system->dets[i]);
+      auto& det = tmp_dets[0];
+      det.ParseFromString(abstract_system->dets[i]);
       if (std::abs(coef) <= std::abs(prev_coefs[i])) continue;
       abstract_system->find_connected_dets(
-          &tmp_det, eps_var / std::abs(coef), connected_det_handler);
+          &det, eps_var / std::abs(coef), connected_det_handler);
     }
     const int n_total_dets = abstract_system->dets.size();
     if (verbose) {
@@ -187,7 +190,10 @@ void SolverImpl::variation(const double eps_var) {
     connections->update();
     timer->checkpoint("updated connections");
     std::vector<double> diagonal(n_total_dets, 0.0);
+#pragma omp parallel for schedule (static, 1)
     for (int i = 0; i < n_total_dets; i++) {
+      const int thread_id = omp_get_thread_num();
+      auto& tmp_det = tmp_dets[thread_id];
       tmp_det.ParseFromString(abstract_system->dets[i]);
       diagonal[i] = abstract_system->hamiltonian(&tmp_det, &tmp_det);
     }
@@ -426,7 +432,7 @@ void SolverImpl::perturbation(
 }
 
 std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
-    const std::vector<int>& n_orbs_pts) const {
+    const std::vector<int>& n_orbs_pts) {
   // Cache commonly used variables.
   const int n_n_orbs_pts = n_orbs_pts.size();
   const int n_var_dets = var_dets_set.size();
@@ -438,7 +444,6 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
   partial_sums_pre.set_max_load_factor(MAX_HASH_LOAD);
   std::vector<double> energy_pts_pre_dtm(n_n_orbs_pts, 0.0);
   std::vector<unsigned long long> n_pt_dets_pre_dtm(n_n_orbs_pts, 0);
-  std::vector<data::Determinant> tmp_dets(n_threads);
 
   timer->start("pre_dtm");
   if (verbose) printf(">>> eps_pre_dtm_pt %#.4g\n", eps_pre_dtm_pt);
@@ -537,7 +542,7 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
 
 std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
     const std::vector<int>& n_orbs_pts,
-    const std::vector<double>& energy_pts_pre_dtm) const {
+    const std::vector<double>& energy_pts_pre_dtm) {
   // Cache commonly used variables.
   const int n_n_orbs_pts = n_orbs_pts.size();
   const int n_var_dets = var_dets_set.size();
@@ -555,7 +560,6 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
   std::vector<std::vector<double>> energy_pts_dtm_batches(n_n_orbs_pts);
   std::vector<unsigned long long> n_pt_dets_dtm(n_n_orbs_pts, 0);
   const double target_error = config->get_double("target_error");
-  std::vector<data::Determinant> tmp_dets(n_threads);
 
   timer->start("dtm");
   if (verbose) printf(">>> eps_dtm_pt %#.4g\n", eps_dtm_pt);
@@ -738,7 +742,7 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
 std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
     const std::vector<int>& n_orbs_pts,
     const std::vector<double>& eps_pts,
-    const std::vector<UncertainResult>& energy_pts_dtm) const {
+    const std::vector<UncertainResult>& energy_pts_dtm) {
   const int n_n_orbs_pts = n_orbs_pts.size();
   const int n_eps_pts = eps_pts.size();
 
@@ -782,7 +786,6 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
   const double eps_pts_min = eps_pts.back();
   const size_t n_batches = config->get_int("n_batches_stc_pt");
   std::hash<std::string> string_hasher;
-  std::vector<data::Determinant> tmp_dets(n_threads);
   const double target_error = config->get_double("target_error");
 
   timer->start("stc");
