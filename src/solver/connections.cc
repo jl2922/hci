@@ -12,9 +12,9 @@
 #include "omp.h"
 #include "spin_det_util.h"
 
-class ConnectionsStandardImpl : public Connections {
+class ConnectionsImpl : public Connections {
  public:
-  ConnectionsStandardImpl(
+  ConnectionsImpl(
       Session* const session, AbstractSystem* const abstract_system);
 
   void update() override;
@@ -60,6 +60,10 @@ class ConnectionsStandardImpl : public Connections {
   // Sorted by unique alpha id.
   std::vector<std::vector<int>> beta_id_to_det_ids;
 
+  std::vector<data::Determinant> tmp_dets;
+
+  data::SpinDeterminant tmp_spin_det;
+
   // Sort both vectors by the first vector.
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
 
@@ -75,18 +79,20 @@ class ConnectionsStandardImpl : public Connections {
   void update_hamiltonian(const int det_id);
 };
 
-ConnectionsStandardImpl::ConnectionsStandardImpl(
+ConnectionsImpl::ConnectionsImpl(
     Session* const session, AbstractSystem* const abstract_system)
     : Connections(session, abstract_system) {
-  verbose = session->get_parallel()->is_master();
+  Parallel* const parallel = session->get_parallel();
   Config* const config = session->get_config();
+  verbose = parallel->is_master();
   n_up = config->get_int("n_up");
   n_dn = config->get_int("n_dn");
   n_dets = 0;
   n_dets_prev = 0;
+  tmp_dets.resize(parallel->get_n_threads() * 2);
 }
 
-void ConnectionsStandardImpl::clear() {
+void ConnectionsImpl::clear() {
   n_dets = 0;
   n_dets_prev = 0;
   sparse_hamiltonian.clear();
@@ -101,9 +107,9 @@ void ConnectionsStandardImpl::clear() {
   beta_id_to_det_ids.clear();
 }
 
-void ConnectionsStandardImpl::update() {
+void ConnectionsImpl::update() {
   n_dets_prev = n_dets;
-  n_dets = abstract_system->wf->terms_size();
+  n_dets = abstract_system->dets.size();
   if (n_dets_prev == n_dets) return;
 
   // Construct helper lists.
@@ -141,16 +147,17 @@ void ConnectionsStandardImpl::update() {
   session->get_timer()->checkpoint("updated hamiltonian");
 }
 
-std::vector<std::pair<int, double>> ConnectionsStandardImpl::get_connections(
+std::vector<std::pair<int, double>> ConnectionsImpl::get_connections(
     const int det_id) {
   return sparse_hamiltonian[det_id];
 }
 
-void ConnectionsStandardImpl::update_abdet() {
+void ConnectionsImpl::update_abdet() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
+  auto& det = tmp_dets[0];
   for (int i = n_dets_prev; i < n_dets; i++) {
-    const auto& det = abstract_system->wf->terms(i).det();
+    det.ParseFromString(abstract_system->dets[i]);
 
     // Obtain alpha id.
     const auto& alpha = det.up().SerializeAsString();
@@ -195,23 +202,25 @@ void ConnectionsStandardImpl::update_abdet() {
   }
 }
 
-void ConnectionsStandardImpl::update_abm1() {
+void ConnectionsImpl::update_abm1() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
+  auto& det = tmp_dets[0];
+  auto& spin_det = tmp_spin_det;
   for (int i = n_dets_prev; i < n_dets; i++) {
-    const auto& det = abstract_system->wf->terms(i).det();
+    det.ParseFromString(abstract_system->dets[i]);
 
     // Update alpha m1.
     const auto& alpha = det.up().SerializeAsString();
     const int alpha_id = alpha_to_id[alpha];
     if (updated_alphas.count(alpha_id) == 0) {
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
-      data::SpinDeterminant det_up(det.up());
+      spin_det = det.up();
       for (int j = 0; j < n_up; j++) {
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
-        const auto& alpha_m1 = det_up.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], false);
+        const auto& alpha_m1 = spin_det.SerializeAsString();
         abm1_to_ab_ids[alpha_m1].first.push_back(alpha_id);
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], true);
       }
       updated_alphas.insert(alpha_id);
     }
@@ -221,12 +230,12 @@ void ConnectionsStandardImpl::update_abm1() {
     const int beta_id = beta_to_id[beta];
     if (updated_betas.count(beta_id) == 0) {
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
-      data::SpinDeterminant det_dn(det.dn());
+      spin_det = det.dn();
       for (int j = 0; j < n_dn; j++) {
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
-        const auto& beta_m1 = det_dn.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], false);
+        const auto& beta_m1 = spin_det.SerializeAsString();
         abm1_to_ab_ids[beta_m1].second.push_back(beta_id);
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], true);
       }
       updated_betas.insert(beta_id);
     }
@@ -242,23 +251,25 @@ void ConnectionsStandardImpl::update_abm1() {
   }
 }
 
-void ConnectionsStandardImpl::update_absingles() {
+void ConnectionsImpl::update_absingles() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
   alpha_id_to_single_ids.resize(alpha_to_id.size());
   beta_id_to_single_ids.resize(beta_to_id.size());
+  auto& det = tmp_dets[0];
+  auto& spin_det = tmp_spin_det;
   for (int i = n_dets - 1; i >= 0; i--) {
-    const auto& det = abstract_system->wf->terms(i).det();
+    det.ParseFromString(abstract_system->dets[i]);
 
     // Update alpha singles.
     const auto& alpha = det.up().SerializeAsString();
     const int alpha_id = alpha_to_id[alpha];
     if (updated_alphas.count(alpha_id) == 0) {
       const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
-      data::SpinDeterminant det_up(det.up());
+      spin_det = det.up();
       for (int j = 0; j < n_up; j++) {
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], false);
-        const auto& alpha_m1 = det_up.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], false);
+        const auto& alpha_m1 = spin_det.SerializeAsString();
         if (abm1_to_ab_ids.count(alpha_m1) == 1) {
           for (const int alpha_single : abm1_to_ab_ids[alpha_m1].first) {
             if (alpha_single == alpha_id) continue;
@@ -269,7 +280,7 @@ void ConnectionsStandardImpl::update_absingles() {
             alpha_id_to_single_ids[alpha_single].push_back(alpha_id);
           }
         }
-        SpinDetUtil::set_occupation(&det_up, up_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], true);
       }
       updated_alphas.insert(alpha_id);
     }
@@ -279,10 +290,10 @@ void ConnectionsStandardImpl::update_absingles() {
     const int beta_id = beta_to_id[beta];
     if (updated_betas.count(beta_id) == 0) {
       const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
-      data::SpinDeterminant det_dn(det.dn());
+      spin_det = det.dn();
       for (int j = 0; j < n_dn; j++) {
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], false);
-        const auto& beta_m1 = det_dn.SerializeAsString();
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], false);
+        const auto& beta_m1 = spin_det.SerializeAsString();
         if (abm1_to_ab_ids.count(beta_m1) == 1) {
           for (const int beta_single : abm1_to_ab_ids[beta_m1].second) {
             if (beta_single == beta_id) continue;
@@ -293,7 +304,7 @@ void ConnectionsStandardImpl::update_absingles() {
             beta_id_to_single_ids[beta_single].push_back(beta_id);
           }
         }
-        SpinDetUtil::set_occupation(&det_dn, dn_elecs[j], true);
+        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], true);
       }
       updated_betas.insert(beta_id);
     }
@@ -323,9 +334,12 @@ void ConnectionsStandardImpl::update_absingles() {
   }
 }
 
-void ConnectionsStandardImpl::update_hamiltonian(const int det_id) {
+void ConnectionsImpl::update_hamiltonian(const int det_id) {
   std::vector<std::pair<int, double>>& res = sparse_hamiltonian[det_id];
-  const auto& det = abstract_system->wf->terms(det_id).det();
+  const int thread_id = omp_get_thread_num();
+  auto& det = tmp_dets[thread_id * 2];
+  auto& connected_det = tmp_dets[thread_id * 2 + 1];
+  det.ParseFromString(abstract_system->dets[det_id]);
   const bool is_new_det = det_id >= n_dets_prev;
 
   if (is_new_det) {
@@ -342,8 +356,8 @@ void ConnectionsStandardImpl::update_hamiltonian(const int det_id) {
   for (auto it = alpha_dets.begin(); it != alpha_dets.end(); it++) {
     const int alpha_det_id = *it;
     if (alpha_det_id < start_id) continue;
-    const auto& alpha_det = abstract_system->wf->terms(alpha_det_id).det();
-    const double H = abstract_system->hamiltonian(&det, &alpha_det);
+    connected_det.ParseFromString(abstract_system->dets[alpha_det_id]);
+    const double H = abstract_system->hamiltonian(&det, &connected_det);
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(alpha_det_id, H));
   }
@@ -355,8 +369,8 @@ void ConnectionsStandardImpl::update_hamiltonian(const int det_id) {
   for (auto it = beta_dets.begin(); it != beta_dets.end(); it++) {
     const int beta_det_id = *it;
     if (beta_det_id < start_id) continue;
-    const auto& beta_det = abstract_system->wf->terms(beta_det_id).det();
-    const double H = abstract_system->hamiltonian(&det, &beta_det);
+    connected_det.ParseFromString(abstract_system->dets[beta_det_id]);
+    const double H = abstract_system->hamiltonian(&det, &connected_det);
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     res.push_back(std::make_pair(beta_det_id, H));
   }
@@ -380,9 +394,8 @@ void ConnectionsStandardImpl::update_hamiltonian(const int det_id) {
         const int related_det_id = related_det_ids[ptr];
         ptr++;
         if (related_det_id < start_id) continue;
-        const auto& related_det =
-            abstract_system->wf->terms(related_det_id).det();
-        const double H = abstract_system->hamiltonian(&det, &related_det);
+        connected_det.ParseFromString(abstract_system->dets[related_det_id]);
+        const double H = abstract_system->hamiltonian(&det, &connected_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
         res.push_back(std::make_pair(related_det_id, H));
       }
@@ -390,7 +403,7 @@ void ConnectionsStandardImpl::update_hamiltonian(const int det_id) {
   }
 }
 
-void ConnectionsStandardImpl::sort_by_first(
+void ConnectionsImpl::sort_by_first(
     std::vector<int>& vec1, std::vector<int>& vec2) {
   std::vector<std::pair<int, int>> vec;
   const int n_vec = vec1.size();
@@ -408,5 +421,5 @@ void ConnectionsStandardImpl::sort_by_first(
 
 Connections* Injector::new_connections(
     Session* const session, AbstractSystem* const abstract_system) {
-  return new ConnectionsStandardImpl(session, abstract_system);
+  return new ConnectionsImpl(session, abstract_system);
 }

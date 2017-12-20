@@ -34,6 +34,7 @@ endif
 
 # Sources and intermediate objects.
 PROTO_SRC := $(SRC_DIR)/data.proto
+PROTO_COMPILED := $(SRC_DIR)/data.pb.h $(SRC_DIR)/data.pb.cc data_pb2.py
 SRCS := $(shell find $(SRC_DIR) \
 		! -name "main.cc" ! -name "*_test.cc" -name "*.cc")
 TESTS := $(shell find $(SRC_DIR) -name "*_test.cc")
@@ -52,9 +53,12 @@ TEST_MAIN := $(OBJ_DIR)/gtest_main.o
 TEST_CXXFLAGS := $(CXXFLAGS) -isystem $(GTEST_DIR)/include -isystem $(GMOCK_DIR)/include -pthread
 TEST_LIB := $(OBJ_DIR)/libgtest.a
 
-.PHONY: all test proto clean
+.PHONY: all hci test clean
 
-all: $(EXE)
+all: $(PROTO_COMPILED)
+	make hci -j
+
+hci: $(EXE)
 
 test: $(TEST_EXE)
 	./$(TEST_EXE) --gtest_filter=-*LargeTest.*
@@ -62,7 +66,7 @@ test: $(TEST_EXE)
 all_tests: $(TEST_EXE)
 	./$(TEST_EXE)
 
-proto: $(PROTO_SRC)
+$(PROTO_COMPILED): $(PROTO_SRC)
 	protoc -I=$(SRC_DIR) --cpp_out=$(SRC_DIR) --python_out=. $(PROTO_SRC)
 
 clean:

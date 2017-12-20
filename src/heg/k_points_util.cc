@@ -10,7 +10,6 @@
 int KPointsUtil::get_n_k_points(const double rcut) {
   int count = 0;
   const int n_max = std::floor(static_cast<float>(rcut));
-  if (n_max > 127) throw std::invalid_argument("rcut must be <= 127");
   double rcut_square = rcut * rcut;
   for (int i = -n_max; i <= n_max; i++) {
     for (int j = -n_max; j <= n_max; j++) {
@@ -27,7 +26,7 @@ std::vector<std::array<int8_t, 3>> KPointsUtil::generate_k_points(
     const double rcut) {
   std::vector<std::array<int8_t, 3>> k_points;
   const int n_max = std::floor(static_cast<float>(rcut));
-  if (n_max > 127) throw std::invalid_argument("rcut must be <= 127");
+  assert(n_max < 127);
   double rcut_square = rcut * rcut;
   for (int i = -n_max; i <= n_max; i++) {
     for (int j = -n_max; j <= n_max; j++) {

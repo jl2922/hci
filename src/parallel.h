@@ -35,10 +35,4 @@ class Parallel {
   virtual void reduce_to_sum(std::vector<long double>& value) = 0;
 };
 
-#pragma omp declare reduction(      \
-    vec_double_plus : std::vector < \
-    double > : std::transform(      \
-                 omp_out            \
-                     .begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus < double > ())) initializer(omp_priv = omp_orig)
-
 #endif

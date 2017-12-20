@@ -70,6 +70,8 @@ class SolverImpl : public Solver {
 
   void print_var_result() const;
 
+  data::Determinant tmp_det;
+
   std::vector<double> get_energy_pts_pre_dtm(
       const std::vector<int>& n_orbs_pts) const;
 
@@ -100,21 +102,18 @@ SolverImpl::~SolverImpl() {}
 
 void SolverImpl::setup_hf() {
   // Create or clear wavefunction.
-  if (!abstract_system->wf) {
-    abstract_system->wf.reset(new data::Wavefunction());
-  }
-  data::Wavefunction* const wf = abstract_system->wf.get();
-  wf->Clear();
+  abstract_system->dets.clear();
+  abstract_system->coefs.clear();
 
   // Add a single term with coef 1.0 and no diffs.
-  data::Term* term = wf->add_terms();
-  term->set_coef(1.0);
-  data::Determinant* det_hf = term->mutable_det();
-  det_hf->mutable_up()->set_n_hf_elecs(n_up);
-  det_hf->mutable_dn()->set_n_hf_elecs(n_dn);
+  auto& det_hf = tmp_det;
+  det_hf.mutable_up()->set_n_hf_elecs(n_up);
+  det_hf.mutable_dn()->set_n_hf_elecs(n_dn);
+  abstract_system->dets.push_back(det_hf.SerializeAsString());
+  abstract_system->coefs.push_back(1.0);
 
   // Update HF and variational energy.
-  energy_hf = energy_var = abstract_system->hamiltonian(det_hf, det_hf);
+  energy_hf = energy_var = abstract_system->hamiltonian(&det_hf, &det_hf);
 
   // Clear connections.
   connections->clear();
@@ -126,14 +125,13 @@ void SolverImpl::variation(const double eps_var) {
   Timer* const timer = session->get_timer();
 
   // Contruct variational determinant hash set.
-  data::Wavefunction* const wf = abstract_system->wf.get();
-  const int n_start_dets = wf->terms_size();
+  const int n_start_dets = abstract_system->dets.size();
   var_dets_set.clear();
   std::vector<double> prev_coefs;
   var_dets_set.reserve(n_start_dets);
   prev_coefs.resize(n_start_dets, 0.0);
-  for (const auto& term : wf->terms()) {
-    var_dets_set.insert(term.det().SerializeAsString());
+  for (int i = 0; i < n_start_dets; i++) {
+    var_dets_set.insert(abstract_system->dets[i]);
   }
 
   // Variation iterations.
@@ -146,11 +144,9 @@ void SolverImpl::variation(const double eps_var) {
       [&](const data::Determinant* const connected_det) {
         std::string det_code = connected_det->SerializeAsString();
         if (var_dets_set.count(det_code) == 0) {
-          var_dets_set.insert(std::move(det_code));
-          data::Term* const term = wf->add_terms();
-          term->set_coef(0.0);
-          auto connected_det_copy = new data::Determinant(*connected_det);
-          term->set_allocated_det(connected_det_copy);
+          var_dets_set.insert(det_code);
+          abstract_system->dets.push_back(det_code);
+          abstract_system->coefs.push_back(0.0);
           n_new_dets++;
         }
       };
@@ -167,15 +163,15 @@ void SolverImpl::variation(const double eps_var) {
 
     // Find new dets.
     n_new_dets = 0;
-    const int n_old_dets = wf->terms_size();
+    const int n_old_dets = abstract_system->dets.size();
     for (int i = 0; i < n_old_dets; i++) {
-      const auto& term = wf->terms(i);
-      const double coef = term.coef();
+      const double coef = abstract_system->coefs[i];
+      tmp_det.ParseFromString(abstract_system->dets[i]);
       if (std::abs(coef) <= std::abs(prev_coefs[i])) continue;
       abstract_system->find_connected_dets(
-          &term.det(), eps_var / std::abs(term.coef()), connected_det_handler);
+          &tmp_det, eps_var / std::abs(coef), connected_det_handler);
     }
-    const int n_total_dets = wf->terms_size();
+    const int n_total_dets = abstract_system->dets.size();
     if (verbose) {
       printf("New / total dets: %'d / %'d\n", n_new_dets, n_total_dets);
     }
@@ -183,22 +179,24 @@ void SolverImpl::variation(const double eps_var) {
 
     // Update prev coefs.
     prev_coefs.resize(n_total_dets);
-    for (int i = 0; i < n_total_dets; i++) prev_coefs[i] = wf->terms(i).coef();
+    for (int i = 0; i < n_total_dets; i++) {
+      prev_coefs[i] = abstract_system->coefs[i];
+    }
 
     // Diagonalize.
     connections->update();
     timer->checkpoint("updated connections");
     std::vector<double> diagonal(n_total_dets, 0.0);
     for (int i = 0; i < n_total_dets; i++) {
-      const auto& det_i = wf->terms(i).det();
-      diagonal[i] = abstract_system->hamiltonian(&det_i, &det_i);
+      tmp_det.ParseFromString(abstract_system->dets[i]);
+      diagonal[i] = abstract_system->hamiltonian(&tmp_det, &tmp_det);
     }
     const auto& diagonalization_result = DavidsonUtil::diagonalize(
         prev_coefs, diagonal, apply_hamiltonian_func, 5, verbose);
     const double energy_var_new = diagonalization_result.first;
     const auto& new_coefs = diagonalization_result.second;
     for (int i = 0; i < n_total_dets; i++) {
-      wf->mutable_terms(i)->set_coef(new_coefs[i]);
+      abstract_system->coefs[i] = new_coefs[i];
     }
 
     // Determine convergence.
@@ -223,7 +221,7 @@ void SolverImpl::save_variation_result(const std::string& filename) {
   data::Wavefunction trunk_wf;
   res.set_energy_hf(energy_hf);
   res.set_energy_var(energy_var);
-  const int n_dets = abstract_system->wf->terms_size();
+  const int n_dets = abstract_system->dets.size();
   res.set_n_dets(n_dets);
   res.SerializeToOstream(&var_file);
   var_file.close();
@@ -236,8 +234,8 @@ void SolverImpl::save_variation_result(const std::string& filename) {
   int trunk_id = 0;
   for (int i = 0; i < n_dets; i++) {
     data::Term* const new_term = trunk_wf.add_terms();
-    data::Term term_i_copy = data::Term(abstract_system->wf->terms(i));
-    new_term->Swap(&term_i_copy);
+    new_term->set_coef(abstract_system->coefs[i]);
+    new_term->mutable_det()->ParseFromString(abstract_system->dets[i]);
     trunk_n_dets++;
     if (trunk_n_dets >= MAX_DETS_PER_FILE || i == n_dets - 1) {
       const auto& wf_filename = filename + ".part" + std::to_string(trunk_id);
@@ -266,12 +264,13 @@ bool SolverImpl::load_variation_result(const std::string& filename) {
   energy_hf = res.energy_hf();
   energy_var = res.energy_var();
   const int n_dets_total = res.n_dets();
-  abstract_system->wf->Clear();
   if (verbose) {
     printf("Loaded summary from: %s\n", filename.c_str());
   }
 
   // Load wavefunctions from trunks.
+  abstract_system->dets.clear();
+  abstract_system->coefs.clear();
   int n_dets_read = 0;
   int trunk_id = 0;
   data::Wavefunction trunk_wf;
@@ -284,9 +283,9 @@ bool SolverImpl::load_variation_result(const std::string& filename) {
     }
     const int trunk_n_dets = trunk_wf.terms_size();
     for (int i = 0; i < trunk_n_dets; i++) {
-      data::Term* const new_term = abstract_system->wf->add_terms();
-      data::Term* term_i = trunk_wf.mutable_terms(i);
-      new_term->Swap(term_i);
+      const auto& term = trunk_wf.terms(i);
+      abstract_system->coefs.push_back(term.coef());
+      abstract_system->dets.push_back(term.det().SerializeAsString());
       n_dets_read++;
     }
     if (verbose) {
@@ -302,7 +301,7 @@ bool SolverImpl::load_variation_result(const std::string& filename) {
 }
 
 void SolverImpl::print_var_result() const {
-  printf("Number of dets: %'d\n", abstract_system->wf->terms_size());
+  printf("Number of dets: %'zu\n", abstract_system->dets.size());
   printf("Variation energy: " ENERGY_FORMAT " Ha\n", energy_var);
   const double energy_corr = energy_var - energy_hf;
   printf("Correlation energy (variation): " ENERGY_FORMAT " Ha\n", energy_corr);
@@ -371,9 +370,9 @@ void SolverImpl::perturbation(
 
   // Construct var dets set.
   var_dets_set.clear();
-  var_dets_set.reserve(abstract_system->wf->terms_size());
-  for (const auto& term : abstract_system->wf->terms()) {
-    var_dets_set.insert(term.det().SerializeAsString());
+  var_dets_set.reserve(abstract_system->dets.size());
+  for (const auto& det_string : abstract_system->dets) {
+    var_dets_set.insert(det_string);
   }
 
   // Get Deterministic PT correction.
@@ -447,9 +446,9 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
   double target_progress = 0.25;
 #pragma omp parallel for schedule(dynamic, 5)
   for (int i = 0; i < n_var_dets; i++) {
-    const auto& term = abstract_system->wf->terms(i);
-    const auto& var_det = term.det();
-    const double coef = term.coef();
+    auto& var_det = tmp_dets[omp_get_thread_num()];
+    var_det.ParseFromString(abstract_system->dets[i]);
+    const double coef = abstract_system->coefs[i];
 
     const auto& pt_det_handler = [&](const auto& det_a) {
       const auto& det_a_code = det_a->SerializeAsString();
@@ -568,9 +567,9 @@ std::vector<UncertainResult> SolverImpl::get_energy_pts_dtm(
     timer->start("search");
 #pragma omp parallel for schedule(dynamic, 5)
     for (int i = 0; i < n_var_dets; i++) {
-      const auto& term = abstract_system->wf->terms(i);
-      const auto& var_det = term.det();
-      const double coef = term.coef();
+      auto& var_det = tmp_dets[omp_get_thread_num()];
+      var_det.ParseFromString(abstract_system->dets[i]);
+      const double coef = abstract_system->coefs[i];
 
       // Process only if:
       // 1. is not a var det, and
@@ -828,9 +827,9 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
       const int var_det_id = stc_pt_sample_dets_list[s];
       const double prob = probs[var_det_id];
       const double cnt = static_cast<double>(stc_pt_sample_dets[var_det_id]);
-      const auto& term = abstract_system->wf->terms(var_det_id);
-      const auto& var_det = term.det();
-      const double coef = term.coef();
+      auto& var_det = tmp_dets[omp_get_thread_num()];
+      var_det.ParseFromString(abstract_system->dets[var_det_id]);
+      const double coef = abstract_system->coefs[var_det_id];
 
       const auto& pt_det_handler = [&](const auto& det_a) {
         const auto& det_a_code = det_a->SerializeAsString();
@@ -1000,7 +999,7 @@ std::vector<std::vector<UncertainResult>> SolverImpl::get_energy_pts_stc(
 }
 
 double SolverImpl::get_weight(const int i) const {
-  const double coef = abstract_system->wf->terms(i).coef();
+  const double coef = abstract_system->coefs[i];
   const double abs_coef = std::abs(coef);
   return abs_coef;
 }
