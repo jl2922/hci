@@ -109,6 +109,7 @@ void SolverImpl::setup_hf() {
 
   // Add a single term with coef 1.0 and no diffs.
   auto& det_hf = tmp_dets[0];
+  det_hf.Clear();
   det_hf.mutable_up()->set_n_hf_elecs(n_up);
   det_hf.mutable_dn()->set_n_hf_elecs(n_dn);
   abstract_system->dets.push_back(det_hf.SerializeAsString());

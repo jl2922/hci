@@ -10,6 +10,7 @@
 #include "../injector.h"
 #include "../solver/spin_det_util.h"
 #include "k_points_util.h"
+#include "omp.h"
 
 class HEGSystemImpl : public HEGSystem {
  public:
@@ -27,7 +28,7 @@ class HEGSystemImpl : public HEGSystem {
       const data::Determinant* const det,
       const double eps,
       const std::function<void(const data::Determinant* const)>&
-          connected_det_handler) const override;
+          connected_det_handler) override;
 
  private:
   double rcut = 0.0;
@@ -65,6 +66,8 @@ class HEGSystemImpl : public HEGSystem {
   std::vector<std::pair<std::array<int8_t, 3>, double>>
       opposite_spin_hci_queue;  // O(k_points).
 
+  std::vector<data::Determinant> tmp_dets;
+
   void setup_hci_queue();
 
   void evaluate_energy_hf();
@@ -73,8 +76,10 @@ class HEGSystemImpl : public HEGSystem {
 };
 
 HEGSystemImpl::HEGSystemImpl(Session* const session) : HEGSystem(session) {
-  verbose = session->get_parallel()->is_master();
   Config* const config = session->get_config();
+  Parallel* const parallel = session->get_parallel();
+  verbose = parallel->is_master();
+  tmp_dets.resize(parallel->get_n_threads());
   r_s = config->get_double("r_s");
   n_up = config->get_int("n_up");
   n_dn = config->get_int("n_dn");
@@ -247,9 +252,12 @@ void HEGSystemImpl::find_connected_dets(
     const data::Determinant* const det,
     const double eps,
     const std::function<void(const data::Determinant* const)>&
-        connected_det_handler) const {
+        connected_det_handler) {
   if (max_abs_H < eps) return;
-  data::Determinant new_det(*det);
+
+  const int thread_id = omp_get_thread_num();
+  auto& new_det = tmp_dets[thread_id];
+  new_det = *det;
 
   const int dn_offset = k_points.size();
 
