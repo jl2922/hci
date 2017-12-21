@@ -25,7 +25,7 @@ class AbstractSystem {
       const data::Determinant* const det,
       const double eps,
       const std::function<void(const data::Determinant* const)>&
-          connected_det_handler) const = 0;
+          connected_det_handler) = 0;
 
  protected:
   Session* const session;

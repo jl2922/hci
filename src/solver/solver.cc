@@ -109,6 +109,7 @@ void SolverImpl::setup_hf() {
 
   // Add a single term with coef 1.0 and no diffs.
   auto& det_hf = tmp_dets[0];
+  det_hf.Clear();
   det_hf.mutable_up()->set_n_hf_elecs(n_up);
   det_hf.mutable_dn()->set_n_hf_elecs(n_dn);
   abstract_system->dets.push_back(det_hf.SerializeAsString());
@@ -168,6 +169,7 @@ void SolverImpl::variation(const double eps_var) {
     const int n_old_dets = abstract_system->dets.size();
     for (int i = 0; i < n_old_dets; i++) {
       const double coef = abstract_system->coefs[i];
+      if (i == 0) printf("coef: %f\n", coef);
       auto& det = tmp_dets[0];
       det.ParseFromString(abstract_system->dets[i]);
       if (std::abs(coef) <= std::abs(prev_coefs[i])) continue;
@@ -190,7 +192,7 @@ void SolverImpl::variation(const double eps_var) {
     connections->update();
     timer->checkpoint("updated connections");
     std::vector<double> diagonal(n_total_dets, 0.0);
-#pragma omp parallel for schedule (static, 1)
+#pragma omp parallel for schedule(static, 1)
     for (int i = 0; i < n_total_dets; i++) {
       const int thread_id = omp_get_thread_num();
       auto& tmp_det = tmp_dets[thread_id];
