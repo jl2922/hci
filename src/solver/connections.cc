@@ -37,6 +37,10 @@ class ConnectionsImpl : public Connections {
 
   bool verbose = false;
 
+  std::vector<std::string> unique_alphas;
+
+  std::vector<std::string> unique_betas;
+
   std::unordered_map<std::string, int> alpha_to_id;
 
   std::unordered_map<std::string, int> beta_to_id;
@@ -62,7 +66,7 @@ class ConnectionsImpl : public Connections {
 
   std::vector<data::Determinant> tmp_dets;
 
-  data::SpinDeterminant tmp_spin_det;
+  std::vector<data::SpinDeterminant> tmp_spin_dets;
 
   // Sort both vectors by the first vector.
   void sort_by_first(std::vector<int>& vec1, std::vector<int>& vec2);
@@ -89,13 +93,17 @@ ConnectionsImpl::ConnectionsImpl(
   n_dn = config->get_int("n_dn");
   n_dets = 0;
   n_dets_prev = 0;
-  tmp_dets.resize(parallel->get_n_threads() * 2);
+  const int n_threads = parallel->get_n_threads();
+  tmp_dets.resize(n_threads * 2);
+  tmp_spin_dets.resize(n_threads);
 }
 
 void ConnectionsImpl::clear() {
   n_dets = 0;
   n_dets_prev = 0;
   sparse_hamiltonian.clear();
+  unique_alphas.clear();
+  unique_betas.clear();
   alpha_to_id.clear();
   beta_to_id.clear();
   abm1_to_ab_ids.clear();
@@ -165,6 +173,7 @@ void ConnectionsImpl::update_abdet() {
     if (alpha_to_id.count(alpha) == 0) {
       alpha_id = alpha_to_id.size();
       alpha_to_id[alpha] = alpha_id;
+      unique_alphas.push_back(alpha);
       alpha_id_to_beta_ids.resize(alpha_id + 1);
       alpha_id_to_det_ids.resize(alpha_id + 1);
     } else {
@@ -177,6 +186,7 @@ void ConnectionsImpl::update_abdet() {
     if (beta_to_id.count(beta) == 0) {
       beta_id = beta_to_id.size();
       beta_to_id[beta] = beta_id;
+      unique_betas.push_back(beta);
       beta_id_to_alpha_ids.resize(beta_id + 1);
       beta_id_to_det_ids.resize(beta_id + 1);
     } else {
@@ -206,7 +216,7 @@ void ConnectionsImpl::update_abm1() {
   std::unordered_set<int> updated_alphas;
   std::unordered_set<int> updated_betas;
   auto& det = tmp_dets[0];
-  auto& spin_det = tmp_spin_det;
+  auto& spin_det = tmp_spin_dets[0];
   for (int i = n_dets_prev; i < n_dets; i++) {
     det.ParseFromString(abstract_system->dets[i]);
 
@@ -257,68 +267,96 @@ void ConnectionsImpl::update_absingles() {
   alpha_id_to_single_ids.resize(alpha_to_id.size());
   beta_id_to_single_ids.resize(beta_to_id.size());
   auto& det = tmp_dets[0];
-  auto& spin_det = tmp_spin_det;
-  for (int i = n_dets - 1; i >= 0; i--) {
+
+  for (int i = n_dets_prev; i < n_dets; i++) {
     det.ParseFromString(abstract_system->dets[i]);
 
-    // Update alpha singles.
     const auto& alpha = det.up().SerializeAsString();
     const int alpha_id = alpha_to_id[alpha];
-    if (updated_alphas.count(alpha_id) == 0) {
-      const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(det.up());
-      spin_det = det.up();
-      for (int j = 0; j < n_up; j++) {
-        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], false);
-        const auto& alpha_m1 = spin_det.SerializeAsString();
-        if (abm1_to_ab_ids.count(alpha_m1) == 1) {
-          for (const int alpha_single : abm1_to_ab_ids[alpha_m1].first) {
-            if (alpha_single == alpha_id) continue;
-            if (i >= n_dets_prev && updated_alphas.count(alpha_single) == 1) {
-              continue;
-            }
-            alpha_id_to_single_ids[alpha_id].push_back(alpha_single);
-            alpha_id_to_single_ids[alpha_single].push_back(alpha_id);
-          }
-        }
-        SpinDetUtil::set_occupation(&spin_det, up_elecs[j], true);
-      }
-      updated_alphas.insert(alpha_id);
-    }
+    updated_alphas.insert(alpha_id);
 
-    // Update beta singles.
     const auto& beta = det.dn().SerializeAsString();
     const int beta_id = beta_to_id[beta];
-    if (updated_betas.count(beta_id) == 0) {
-      const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(det.dn());
-      spin_det = det.dn();
-      for (int j = 0; j < n_dn; j++) {
-        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], false);
-        const auto& beta_m1 = spin_det.SerializeAsString();
-        if (abm1_to_ab_ids.count(beta_m1) == 1) {
-          for (const int beta_single : abm1_to_ab_ids[beta_m1].second) {
-            if (beta_single == beta_id) continue;
-            if (i >= n_dets_prev && updated_betas.count(beta_single) == 1) {
-              continue;
-            }
-            beta_id_to_single_ids[beta_id].push_back(beta_single);
-            beta_id_to_single_ids[beta_single].push_back(beta_id);
+    updated_betas.insert(beta_id);
+  }
+
+  const int n_unique_alphas = alpha_to_id.size();
+  const int n_unique_betas = beta_to_id.size();
+
+  std::vector<omp_lock_t> locks;
+  const int n_locks = std::max(n_unique_alphas, n_unique_betas);
+  locks.resize(n_locks);
+  for (auto& lock : locks) omp_init_lock(&lock);
+
+#pragma omp parallel for schedule(static, 1)
+  for (int alpha_id = 0; alpha_id < n_unique_alphas; alpha_id++) {
+    const auto& alpha = unique_alphas[alpha_id];
+    const int thread_id = omp_get_thread_num();
+    auto& spin_det = tmp_spin_dets[thread_id];
+    spin_det.ParseFromString(alpha);
+    const auto& up_elecs = SpinDetUtil::get_occupied_orbitals(spin_det);
+    for (int j = 0; j < n_up; j++) {
+      SpinDetUtil::set_occupation(&spin_det, up_elecs[j], false);
+      const auto& alpha_m1 = spin_det.SerializeAsString();
+      if (abm1_to_ab_ids.count(alpha_m1) == 1) {
+        for (const int alpha_single : abm1_to_ab_ids[alpha_m1].first) {
+          if (alpha_single == alpha_id) continue;
+          if (alpha_id > alpha_single && updated_alphas.count(alpha_id) &&
+              updated_alphas.count(alpha_single)) {
+            continue;
           }
+          omp_set_lock(&locks[alpha_id]);
+          alpha_id_to_single_ids[alpha_id].push_back(alpha_single);
+          omp_unset_lock(&locks[alpha_id]);
+          omp_set_lock(&locks[alpha_single]);
+          alpha_id_to_single_ids[alpha_single].push_back(alpha_id);
+          omp_unset_lock(&locks[alpha_single]);
         }
-        SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], true);
       }
-      updated_betas.insert(beta_id);
+      SpinDetUtil::set_occupation(&spin_det, up_elecs[j], true);
     }
   }
 
+#pragma omp parallel for schedule(static, 1)
+  for (int beta_id = 0; beta_id < n_unique_betas; beta_id++) {
+    const auto& beta = unique_betas[beta_id];
+    const int thread_id = omp_get_thread_num();
+    auto& spin_det = tmp_spin_dets[thread_id];
+    spin_det.ParseFromString(beta);
+    const auto& dn_elecs = SpinDetUtil::get_occupied_orbitals(spin_det);
+    for (int j = 0; j < n_dn; j++) {
+      SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], false);
+      const auto& beta_m1 = spin_det.SerializeAsString();
+      if (abm1_to_ab_ids.count(beta_m1) == 1) {
+        for (const int beta_single : abm1_to_ab_ids[beta_m1].second) {
+          if (beta_single == beta_id) continue;
+          if (beta_id > beta_single && updated_betas.count(beta_id) &&
+              updated_betas.count(beta_single)) {
+            continue;
+          }
+          omp_set_lock(&locks[beta_id]);
+          beta_id_to_single_ids[beta_id].push_back(beta_single);
+          omp_unset_lock(&locks[beta_id]);
+          omp_set_lock(&locks[beta_single]);
+          beta_id_to_single_ids[beta_single].push_back(beta_id);
+          omp_unset_lock(&locks[beta_single]);
+        }
+      }
+      SpinDetUtil::set_occupation(&spin_det, dn_elecs[j], true);
+    }
+  }
+
+  for (auto& lock : locks) omp_destroy_lock(&lock);
+
   // Sort updated alpha/beta singles and keep uniques.
   unsigned long long singles_cnt = 0;
-  for (const int alpha_id : updated_alphas) {
+  for (int alpha_id = 0; alpha_id < n_unique_alphas; alpha_id++) {
     std::sort(
         alpha_id_to_single_ids[alpha_id].begin(),
         alpha_id_to_single_ids[alpha_id].end());
     singles_cnt += alpha_id_to_single_ids[alpha_id].size();
   }
-  for (const int beta_id : updated_betas) {
+  for (int beta_id = 0; beta_id < n_unique_betas; beta_id++) {
     std::sort(
         beta_id_to_single_ids[beta_id].begin(),
         beta_id_to_single_ids[beta_id].end());
