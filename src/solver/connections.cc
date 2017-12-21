@@ -350,12 +350,14 @@ void ConnectionsImpl::update_absingles() {
 
   // Sort updated alpha/beta singles and keep uniques.
   unsigned long long singles_cnt = 0;
+#pragma omp parallel for schedule(static, 1) reduction(+ : singles_cnt)
   for (int alpha_id = 0; alpha_id < n_unique_alphas; alpha_id++) {
     std::sort(
         alpha_id_to_single_ids[alpha_id].begin(),
         alpha_id_to_single_ids[alpha_id].end());
     singles_cnt += alpha_id_to_single_ids[alpha_id].size();
   }
+#pragma omp parallel for schedule(static, 1) reduction(+ : singles_cnt)
   for (int beta_id = 0; beta_id < n_unique_betas; beta_id++) {
     std::sort(
         beta_id_to_single_ids[beta_id].begin(),

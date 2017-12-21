@@ -169,7 +169,6 @@ void SolverImpl::variation(const double eps_var) {
     const int n_old_dets = abstract_system->dets.size();
     for (int i = 0; i < n_old_dets; i++) {
       const double coef = abstract_system->coefs[i];
-      if (i == 0) printf("coef: %f\n", coef);
       auto& det = tmp_dets[0];
       det.ParseFromString(abstract_system->dets[i]);
       if (std::abs(coef) <= std::abs(prev_coefs[i])) continue;
