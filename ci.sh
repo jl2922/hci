@@ -116,6 +116,5 @@ echo "Completed"
 echo
 
 cp ci.mk local.mk
-make proto
-make -j
+make
 make all_tests -j
