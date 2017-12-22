@@ -325,7 +325,7 @@ std::vector<double> SolverImpl::apply_hamiltonian(
   for (int i = 0; i < n_threads; i++) res[i].resize(n_dets, 0.0);
   std::vector<unsigned long long> n_nonzero_elems(n_threads, 0);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static, 1)
   for (int i = proc_id; i < n_dets; i += n_procs) {
     const int thread_id = omp_get_thread_num();
     const auto& conns = connections->get_connections(i);
