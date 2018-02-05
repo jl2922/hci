@@ -35,6 +35,15 @@ int main(int argc, char** argv) {
     HEGController* const heg_controller =
         Injector::new_heg_controller(session, solver, heg_system);
     heg_controller->run();
+  } else if (type == "chem") {
+    ChemSystem* const chem_system = Injector::new_chem_system(session);
+    Connections* const connections =
+        Injector::new_connections(session, chem_system);
+    Solver* const solver =
+        Injector::new_solver(session, connections, chem_system);
+    ChemController* const chem_controller =
+        Injector::new_chem_controller(session, solver, chem_system);
+    chem_controller->run();
   } else {
     throw std::invalid_argument("System type '" + type + "' is not supported.");
   }

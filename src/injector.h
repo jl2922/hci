@@ -2,6 +2,8 @@
 #define INJECTOR_H_
 
 #include "abstract_system.h"
+#include "chem/chem_controller.h"
+#include "chem/chem_system.h"
 #include "config.h"
 #include "heg/heg_controller.h"
 #include "heg/heg_system.h"
@@ -37,7 +39,14 @@ class Injector {
       Solver* const solver,
       HEGSystem* const heg_system);
 
+  static ChemController* new_chem_controller(
+      Session* const session,
+      Solver* const solver,
+      ChemSystem* const chem_system);
+
   static HEGSystem* new_heg_system(Session* const session);
+
+  static ChemSystem* new_chem_system(Session* const session);
 };
 
 #endif
