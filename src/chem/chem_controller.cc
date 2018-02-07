@@ -1,7 +1,7 @@
 #include "chem_controller.h"
 
-#include <thread>
 #include <boost/format.hpp>
+#include <thread>
 #include "../injector.h"
 
 class ChemControllerImpl : public ChemController {

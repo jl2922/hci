@@ -1,5 +1,6 @@
 #include "chem_system.h"
 
+#include <cstdio>
 #include "../injector.h"
 
 class ChemSystemImpl : public ChemSystem {
@@ -17,13 +18,26 @@ class ChemSystemImpl : public ChemSystem {
       const double eps,
       const std::function<void(const data::Determinant* const)>&
           connected_det_handler) override;
+
+ private:
+  int n_orbs;
+
+  int n_up;
+
+  int n_dn;
 };
 
 ChemSystemImpl::ChemSystemImpl(Session* const session) : ChemSystem(session) {
   //...
 }
 
-void ChemSystemImpl::setup() {}
+void ChemSystemImpl::setup() {
+  FILE* fcidump = fopen("FCIDUMP", "r");
+  if (!fcidump) throw new std::runtime_error("FCIDUMP not found");
+  char buf[80];
+  fscanf(fcidump, "%*s %*s %d", &n_orbs);
+  printf("%d\n", n_orbs);
+}
 
 double ChemSystemImpl::hamiltonian(
     const data::Determinant* const det_pq,
