@@ -1,0 +1,1888 @@
+ MPI is DISABLED!
+Executable: /home/yuanyao/sqmc/src/sqmc
+Command line arguments: /home/yuanyao/sqmc/src/sqmc -i ii
+
+        **************************************************************
+        ** SQMC (Semistochastic Quantum Monte Carlo)                **
+        ** SHCI (Semistochastic Heat-bath Configuration Interation) **
+        **************************************************************
+
+Executed by yuanyao on 2017-12-07 17:00:02 (-0500) on master host 
+
+BEG OF sqmc CP, REAL TIME                                               0.00       0.00        0        0, Mem avail    6057.24    6022.65    6022.64
+
+Job run on    1 nodes and       1 cores
+
+random number seeds [master_core] 2726516565436524 1346563466354361
+
+run_type= hci
+eps_var, eps_pt, target_error, n_states= 5.0E-04 1.0E-07 1.0E-04  1
+dump_wf_var=F
+
+&SELECTED_CI
+eps_var_sched= 1.00E-01 1.00E-01 1.00E-02 6.00E-03 4.00E-03 2.00E-03 2.00E-03 2.00E-03 1.50E-03 1.50E-03 1.50E-03 1.00E-03 1.00E-03 1.00E-03 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04 5.00E-04
+eps_var, eps_pt, eps_pt_big, target_error=  5.00E-04  1.00E-07  0.00E+00  1.00E-04
+dump_wf_var=F n_max_connections= -1.0000E+00 n_states=  1 n_mc=     0
+n_energy_batch=-1 use_hash_generation=F wf_restart_file=                                 wf_file_header=T n_dtm_batches=      11 n_stoch_batches=      11
+
+
+&HF_DET
+hf_symmetry=999
+HF up electron occupancies (from input file)=
+HF dn electron occdnancies (from input file)=
+irreps       =
+irrep_occs_up=
+irrep_occs_dn=
+
+&NATORB
+get_natorbs, use_pt=FF
+
+&GREENS_FUNCTION
+get_greens_function, n_w, w_min, w_max=F  20 0.0000E+00 0.0000E+00
+ Using 128 bit integers to encode orbital occupations
+ num_words=           1 bits_per_word=         127 max number of orbitals=         127
+hamiltonian_type= chem
+nelec, nup, ndn=    8    4    4
+
+point_group=d2h 
+Time reversal symmetry of chem being used
+z(time reversal)   1
+orbital_symmetries=  1  1  2  3  5  5  6  7
+spatial_symmetry_wf=  1
+
+BEG OF system_setup_chem CP, REAL TIME                                  0.00       0.00        0        0, Mem avail    6056.98    6024.36    6024.36
+
+nup,ndn,norb,empty_up,empty_dn,max_connections=     4     4     8     4     4         722
+
+Reading integrals from FCIDUMP file since integrals.dat does not exist, and then sorting
+
+About to allocate integrals to size      1035
+Finished allocating integrals
+
+
+BEG OF Read from FCIDUMP CP, REAL TIME                                  0.00       0.00        0        0, Mem avail    6056.98    6024.36    6024.36
+  &FCI NORB=  8,NELEC= 8,MS2= 0,
+   ORBSYM=1,1,2,3,5,5,6,7,
+   ISYM=1
+
+Reading HF occupations from FCIDUMP file (if they exist)
+ 1 2 3 5   hf_up
+HF up orbitals occupied:   1   2   3   5
+ 1 2 3 5   hf_dn
+HF dn orbitals occupied:   1   2   3   5
+  &END
+Start reading integs
+Done reading integs
+END OF Read from FCIDUMP CP, REAL TIME                                  0.00       0.00        0        0, Mem avail    6056.98    6024.36    6024.36
+
+Occupied up orbitals=   1   2   3   5
+Symmetries up orbs=     1   1   2   5
+Occupied dn orbitals=   1   2   3   5
+Symmetries dn orbs=     1   1   2   5
+
+ Before reordering, hf_up,hf_dn= 23 23
+ computing orbital energies with hf_up,hf_dn= 23 23
+
+Orbitals reordered: norb=     8
+orb_order(   1)=   1 energy=     -0.80094047 symmetry= 1
+orb_order(   2)=   5 energy=     -0.52638576 symmetry= 5
+orb_order(   3)=   2 energy=     -0.27796553 symmetry= 1
+orb_order(   4)=   3 energy=     -0.21898044 symmetry= 2
+orb_order(   5)=   4 energy=      0.15975599 symmetry= 3
+orb_order(   6)=   7 energy=      0.21133261 symmetry= 6
+orb_order(   7)=   8 energy=      0.31714800 symmetry= 7
+orb_order(   8)=   6 energy=      0.50740563 symmetry= 5
+ After sorting, active space orbitals are:
+
+After reordering, hf_up, hf_dn (bin and dec)=                                    1111                                    1111          15          15
+
+One-Body Energy        =  -26.79082724
+Two-Body Energy        =   11.57114141
+Nuclear-Nuclear Energy =  -59.12435644
+HF Energy              =  -74.34404227
+MP2 Energy             =  -74.49806546
+
+END OF HF pieces CP, REAL TIME                                          0.01       0.00        0        0, Mem avail    6056.98    6025.14    6025.10
+
+diagonal_ham_lowest, diagonal_ham_highest, tau_multiplier, tau=   -74.344042   -71.454557
+END OF system_setup_chem CP, REAL TIME                                  0.01       0.00        0        0, Mem avail    6056.98    6025.14    6025.10
+
+BEG OF setup_efficient_heatbath CP, REAL TIME                           0.01       0.00        0        0, Mem avail    6056.98    6025.14    6025.10
+ About to call shmem_allocate. size=                 4608
+ Max double excitation magnitude=  0.19886638781320001     
+ Number of entries in dtm_hb=                  324
+END OF setup_efficient_heatbath CP, REAL TIME                           0.01       0.00        0        0, Mem avail    6056.73    6024.98    6024.84
+
+BEG OF HCI CP, REAL TIME                                                0.01       0.00        0        0, Mem avail    6056.73    6024.98    6024.84
+
+Performing HCI with eps_var_sched= 1.00E-1 1.00E-1 1.00E-2 6.00E-3 4.00E-3 2.00E-3 2.00E-3 2.00E-3 1.50E-3 1.50E-3 1.50E-3 1.00E-3 1.00E-3 1.00E-3 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4 5.00E-4
+and  eps_pt=  1.0000E-07
+ HCI starting det: 15 15
+
+Computing  1 lowest-energy states
+
+Not using variational active space
+
+Did not find variational wavefn file wf_eps_var=5.00E-4, so generate wavefn
+Iteration   0 eps1= 1.0E-1 ndets=         1 = 1.00E+00 energy=      -74.344042
+
+BEG OF variational part CP, REAL TIME                                   0.01       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+HCI iter=  1 eps_var=  1.0000E-01
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.01       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+find_doubly_excited: allocating dets_up etc. arrays of size        35 = 3.5000E+01
+Initially allocating (for merging) iorder etc. arrays of size        35 = 3.5000E+01
+is_done, is_not_done         0         1         1
+Performing final sort/merge of size                   7 = 7.0000E+00
+
+After allocating min_H_already_done of size         5, Memory avail (MB)=                                               6056.73    6024.65    6024.65
+ndets_global=         5
+END OF get_next_det_list CP, REAL TIME                                  0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=        35 = 3.50E+01 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+n_unique_beta_new,ndet_new=       3         5
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+n_det=           5  5.00E+00, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=         5  5.00E+00
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+Iteration, Eigenvalues=  1   -74.344042275
+Iteration, Eigenvalues=  2   -74.460361262
+Iteration, Eigenvalues=  3   -74.465509597
+Iteration, Eigenvalues=  4   -74.465581453
+Iteration, Eigenvalues=  5   -74.465586360
+davidson_sparse: n, iter, Lowest eigenvalue =         5   7   -74.4655863595
+END OF davidson_sparse CP, REAL TIME                                    0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+ State           1 :
+
+Wavefunction has        5 = 5.00E+00 determinants. Dets. with largest  5 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                    1111                                    1111             15             15  0  0.921726695
+                                  100111                                  100111             39             39  2 -0.358171326
+                                  100111                                10001011             39            139  2  0.104233972
+                                10001011                                10001011            139            139  2 -0.086114704
+                                    1111                                10100011             15            163  2  0.062070428
+
+Lowest eigenvalues=   -74.465586
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.84958010
+     2         4    0.15041990
+
+Orbital orb_sym sum_w2_orb
+     1     1    2.000000
+     2     5    2.000000
+     3     1    1.970451
+     4     2    1.728709
+     6     6    0.271291
+     8     5    0.029549
+
+Seniority n_seniority sum_w2_seniority
+     0        3    0.985283
+     2        2    0.014717
+n_det_sym, n_det_individual=         5         7
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.02       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+Iteration   1 eps1= 1.0E-1 ndets=         5 = 5.00E+00 energy=      -74.465586
+
+HCI iter=  2 eps_var=  1.0000E-01
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.03       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+ j,n_connected_dets=           1           5
+ j,n_connected_dets=           5           1
+ j,n_connected_dets=           2           1
+find_doubly_excited: allocating dets_up etc. arrays of size         4 = 4.0000E+00
+Initially allocating (for merging) iorder etc. arrays of size         4 = 4.0000E+00
+find_doubly_excited: Performing sort and merge of size          4 = 4.0000E+00
+find_doubly_excited: reallocating dets_up etc. arrays of size         9 = 9.0000E+00
+
+After allocating iorder of size         9, Memory avail (MB)=                                                           6056.73    6024.65    6024.65
+
+After allocating temp_i16_up of size         5, Memory avail (MB)=                                                      6056.73    6024.65    6024.65
+
+After allocating temp_i16_dn of size         5, Memory avail (MB)=                                                      6056.73    6024.65    6024.65
+
+After allocating temp_i_2 of size         5, Memory avail (MB)=                                                         6056.73    6024.65    6024.65
+
+After allocating dets_up of size         9, Memory avail (MB)=                                                          6056.73    6024.65    6024.65
+
+After allocating dets_dn of size         9, Memory avail (MB)=                                                          6056.73    6024.65    6024.65
+is_done, is_not_done         1         4         5
+Performing final sort/merge of size                   5 = 5.0000E+00
+
+After allocating min_H_already_done of size         5, Memory avail (MB)=                                               6056.73    6024.65    6024.65
+ndets_global=         5
+END OF get_next_det_list CP, REAL TIME                                  0.03       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+Cycling hci iteration because ndets_global_new==ndets_global_old
+
+HCI iter=  3 eps_var=  1.0000E-02
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+ j,n_connected_dets=           1          30
+ j,n_connected_dets=           5           1
+ j,n_connected_dets=           2          20
+ j,n_connected_dets=           2          20
+find_doubly_excited: allocating dets_up etc. arrays of size        86 = 8.6000E+01
+Initially allocating (for merging) iorder etc. arrays of size        86 = 8.6000E+01
+is_done, is_not_done         0         5         5
+Performing final sort/merge of size                  78 = 7.8000E+01
+
+After allocating min_H_already_done of size        41, Memory avail (MB)=                                               6056.73    6024.65    6024.65
+ndets_global=        41
+END OF get_next_det_list CP, REAL TIME                                  0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=        43 = 4.30E+01 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+n_unique_beta_new,ndet_new=      21        36
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+n_det=          41  4.10E+01, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=        41  4.10E+01
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.04       0.00        0        0, Mem avail    6056.73    6024.65    6024.65
+Iteration, Eigenvalues=  1   -74.465586360
+Iteration, Eigenvalues=  2   -74.521568016
+Iteration, Eigenvalues=  3   -74.526097552
+Iteration, Eigenvalues=  4   -74.526505273
+Iteration, Eigenvalues=  5   -74.526575130
+Iteration, Eigenvalues=  6   -74.526585427
+Iteration, Eigenvalues=  7   -74.526588322
+Iteration, Eigenvalues=  8   -74.526589269
+Iteration, Eigenvalues=  9   -74.526589498
+Iteration, Eigenvalues= 10   -74.526589534
+Iteration, Eigenvalues= 11   -74.526589539
+Iteration, Eigenvalues= 12   -74.526589541
+Iteration, Eigenvalues= 13   -74.526589541
+davidson_sparse: n, iter, Lowest eigenvalue =        41  14   -74.5265895411
+END OF davidson_sparse CP, REAL TIME                                    0.04       0.00        0        0, Mem avail    6056.73    6024.51    6024.51
+ State           1 :
+
+Wavefunction has       41 = 4.10E+01 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                    1111                                    1111             15             15  0  0.896781055
+                                  100111                                  100111             39             39  2 -0.338302249
+                                  100111                                10001011             39            139  2  0.113225013
+                                10001011                                10001011            139            139  2 -0.088045604
+                                   11101                                   11101             29             29  2 -0.079672029
+                                   11110                                 1001101             30             77  2  0.079049542
+                                10100011                                10100011            163            163  4  0.066030510
+                                 1001101                                 1001101             77             77  2 -0.064632273
+                                   11101                                 1001110             29             78  2  0.063696841
+                                    1111                                10100011             15            163  2  0.059836843
+                                   11101                                 1001011             29             75  2 -0.055898687
+                                  100111                                10001110             39            142  2  0.055537199
+                                10001011                                10001110            139            142  2 -0.050582473
+                                   11011                                 1001101             27             77  2 -0.050513607
+                                   11110                                   11110             30             30  2 -0.049706312
+                                   11011                                   11011             27             27  2 -0.046157246
+                                  101110                                10000111             46            135  2  0.045280633
+                                  101101                                  101101             45             45  2 -0.039887516
+                                 1001011                                 1001110             75             78  2  0.036865078
+                                10100011                                10100110            163            166  4  0.036074751
+
+Lowest eigenvalues=   -74.526590
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.80421626
+     2        29    0.18529820
+     3         1    0.00008675
+     4        10    0.01039879
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965657
+     2     5    1.952875
+     3     1    1.942641
+     4     2    1.726376
+     5     3    0.044889
+     6     6    0.275536
+     7     7    0.033549
+     8     5    0.058477
+
+Seniority n_seniority sum_w2_seniority
+     0       24    0.954974
+     1        4    0.005254
+     2       13    0.039773
+n_det_sym, n_det_individual=        41        58
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.04       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+Iteration   3 eps1= 1.0E-2 ndets=        41 = 4.10E+01 energy=      -74.526590
+
+HCI iter=  4 eps_var=  6.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+ j,n_connected_dets=           1          32
+ j,n_connected_dets=          41           1
+ j,n_connected_dets=          20           1
+ j,n_connected_dets=          10           2
+ j,n_connected_dets=           5          27
+ j,n_connected_dets=           6          24
+ j,n_connected_dets=           6          24
+find_doubly_excited: allocating dets_up etc. arrays of size       243 = 2.4300E+02
+Initially allocating (for merging) iorder etc. arrays of size       243 = 2.4300E+02
+find_doubly_excited: Performing sort and merge of size        243 = 2.4300E+02
+is_done, is_not_done         0        41        41
+Performing final sort/merge of size                  96 = 9.6000E+01
+
+After allocating min_H_already_done of size        95, Memory avail (MB)=                                               6056.73    6027.01    6026.96
+ndets_global=        95
+END OF get_next_det_list CP, REAL TIME                                  0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=        99 = 9.90E+01 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+
+n_unique_beta_new,ndet_new=      21        54
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.05       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+
+n_det=          95  9.50E+01, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.06       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=        95  9.50E+01
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.06       0.00        0        0, Mem avail    6056.73    6027.01    6026.96
+Iteration, Eigenvalues=  1   -74.526589541
+Iteration, Eigenvalues=  2   -74.531966998
+Iteration, Eigenvalues=  3   -74.532620195
+Iteration, Eigenvalues=  4   -74.532812768
+Iteration, Eigenvalues=  5   -74.532878715
+Iteration, Eigenvalues=  6   -74.532941309
+Iteration, Eigenvalues=  7   -74.533019127
+Iteration, Eigenvalues=  8   -74.533069032
+Iteration, Eigenvalues=  9   -74.533094711
+Iteration, Eigenvalues= 10   -74.533112004
+Iteration, Eigenvalues= 11   -74.533126926
+Iteration, Eigenvalues= 12   -74.533131041
+Iteration, Eigenvalues= 13   -74.533131995
+Iteration, Eigenvalues= 14   -74.533132282
+Iteration, Eigenvalues= 15   -74.533132399
+Iteration, Eigenvalues= 16   -74.533132446
+Iteration, Eigenvalues= 17   -74.533132469
+Iteration, Eigenvalues= 18   -74.533132475
+Iteration, Eigenvalues= 19   -74.533132476
+Iteration, Eigenvalues= 20   -74.533132476
+davidson_sparse: n, iter, Lowest eigenvalue =        95  21   -74.5331324761
+END OF davidson_sparse CP, REAL TIME                                    0.06       0.00        0        0, Mem avail    6056.73    6026.87    6026.87
+ State           1 :
+
+Wavefunction has       95 = 9.50E+01 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                    1111                                    1111             15             15  0  0.882493907
+                                  100111                                  100111             39             39  2 -0.335620783
+                                   11011                                   11011             27             27  2 -0.128896482
+                                  100111                                10001011             39            139  2  0.112093589
+                                10001011                                10001011            139            139  2 -0.092456240
+                                   11110                                 1001101             30             77  2  0.082369165
+                                   11101                                 1001011             29             75  2 -0.079789325
+                                 1001101                                 1001101             77             77  2 -0.074473116
+                                   11101                                   11101             29             29  2 -0.068741702
+                                10100011                                10100011            163            163  4  0.066281349
+                                    1111                                10100011             15            163  2  0.065109922
+                                   11101                                 1001110             29             78  2  0.064906532
+                                   11011                                 1001101             27             77  2 -0.052217534
+                                  100111                                10001110             39            142  2  0.051772975
+                                10001011                                10001110            139            142  2 -0.049661776
+                                   11110                                   11110             30             30  2 -0.048651377
+                                  110011                                  110011             51             51  4  0.048160042
+                                  101110                                10000111             46            135  2  0.045526275
+                                  101011                                10000111             43            135  2  0.042669984
+                                  101101                                  101101             45             45  2 -0.040850214
+
+Lowest eigenvalues=   -74.533132
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.77879550
+     1         1    0.00109440
+     2        31    0.20329174
+     3        30    0.00144759
+     4        32    0.01537077
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965239
+     2     5    1.944690
+     3     1    1.896812
+     4     2    1.719755
+     5     3    0.081456
+     6     6    0.283644
+     7     7    0.044217
+     8     5    0.064187
+
+Seniority n_seniority sum_w2_seniority
+     0       31    0.944024
+     1       10    0.007008
+     2       49    0.048760
+     3        1    0.000050
+     4        4    0.000158
+n_det_sym, n_det_individual=        95       159
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.06       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+Iteration   4 eps1= 6.0E-3 ndets=        95 = 9.50E+01 energy=      -74.533132
+
+HCI iter=  5 eps_var=  4.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.06       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+ j,n_connected_dets=           1          32
+ j,n_connected_dets=          95           1
+ j,n_connected_dets=          47           1
+ j,n_connected_dets=          23           2
+ j,n_connected_dets=          11           9
+ j,n_connected_dets=           5          19
+ j,n_connected_dets=           7          32
+ j,n_connected_dets=           7          32
+ j,n_connected_dets=          16          14
+ j,n_connected_dets=          18           1
+ j,n_connected_dets=          16          14
+find_doubly_excited: allocating dets_up etc. arrays of size       367 = 3.6700E+02
+Initially allocating (for merging) iorder etc. arrays of size       367 = 3.6700E+02
+is_done, is_not_done         2        93        95
+Performing final sort/merge of size                 346 = 3.4600E+02
+
+After allocating min_H_already_done of size       138, Memory avail (MB)=                                               6056.73    6027.04    6026.92
+ndets_global=       138
+END OF get_next_det_list CP, REAL TIME                                  0.06       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.06       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.07       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       144 = 1.44E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.07       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.07       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+
+n_unique_beta_new,ndet_new=      22        43
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.07       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+
+n_det=         138  1.38E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.07       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       138  1.38E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.07       0.00        0        0, Mem avail    6056.73    6027.04    6026.92
+Iteration, Eigenvalues=  1   -74.533132476
+Iteration, Eigenvalues=  2   -74.535789982
+Iteration, Eigenvalues=  3   -74.536032533
+Iteration, Eigenvalues=  4   -74.536126704
+Iteration, Eigenvalues=  5   -74.536162496
+Iteration, Eigenvalues=  6   -74.536190349
+Iteration, Eigenvalues=  7   -74.536226920
+Iteration, Eigenvalues=  8   -74.536265530
+Iteration, Eigenvalues=  9   -74.536301662
+Iteration, Eigenvalues= 10   -74.536314450
+Iteration, Eigenvalues= 11   -74.536319069
+Iteration, Eigenvalues= 12   -74.536320446
+Iteration, Eigenvalues= 13   -74.536321013
+Iteration, Eigenvalues= 14   -74.536321211
+Iteration, Eigenvalues= 15   -74.536321291
+Iteration, Eigenvalues= 16   -74.536321322
+Iteration, Eigenvalues= 17   -74.536321332
+Iteration, Eigenvalues= 18   -74.536321336
+Iteration, Eigenvalues= 19   -74.536321338
+Iteration, Eigenvalues= 20   -74.536321338
+davidson_sparse: n, iter, Lowest eigenvalue =       138  21   -74.5363213378
+END OF davidson_sparse CP, REAL TIME                                    0.08       0.00        0        0, Mem avail    6056.73    6026.90    6026.90
+ State           1 :
+
+Wavefunction has      138 = 1.38E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                    1111                                    1111             15             15  0  0.867820113
+                                  100111                                  100111             39             39  2 -0.324977178
+                                   11011                                   11011             27             27  2 -0.194419716
+                                  100111                                10001011             39            139  2  0.113675277
+                                   11101                                 1001011             29             75  2 -0.101777121
+                                10001011                                10001011            139            139  2 -0.089986349
+                                 1001101                                 1001101             77             77  2 -0.083977157
+                                   11110                                 1001101             30             77  2  0.077554312
+                                   11101                                 1001110             29             78  2  0.070133885
+                                    1111                                10100011             15            163  2  0.067818555
+                                10100011                                10100011            163            163  4  0.066457969
+                                  110011                                  110011             51             51  4  0.064382332
+                                   11101                                   11101             29             29  2 -0.056917470
+                                  100111                                10001110             39            142  2  0.052329896
+                                10001011                                10001110            139            142  2 -0.048837661
+                                   11110                                   11110             30             30  2 -0.048209830
+                                  110011                                 1001011             51             75  3 -0.047353033
+                                  101101                                  101101             45             45  2 -0.045026251
+                                   11011                                 1001101             27             77  2 -0.044738064
+                                  101110                                10000111             46            135  2  0.044180578
+
+Lowest eigenvalues=   -74.536321
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.75311175
+     1         1    0.00116249
+     2        31    0.22131314
+     3        42    0.00507773
+     4        59    0.01916277
+     5         1    0.00000064
+     6         3    0.00017148
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.963609
+     2     5    1.936558
+     3     1    1.838339
+     4     2    1.724789
+     5     3    0.134170
+     6     6    0.280114
+     7     7    0.056575
+     8     5    0.065845
+
+Seniority n_seniority sum_w2_seniority
+     0       41    0.935596
+     1       15    0.007065
+     2       64    0.056649
+     3        9    0.000394
+     4        9    0.000296
+n_det_sym, n_det_individual=       138       235
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.08       0.00        0        0, Mem avail    6056.73    6027.05    6026.94
+Iteration   5 eps1= 4.0E-3 ndets=       138 = 1.38E+02 energy=      -74.536321
+
+HCI iter=  6 eps_var=  2.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+ j,n_connected_dets=           1          33
+ j,n_connected_dets=         138           1
+ j,n_connected_dets=          69           1
+ j,n_connected_dets=          34           8
+ j,n_connected_dets=          17          23
+ j,n_connected_dets=          24          10
+ j,n_connected_dets=          20           6
+ j,n_connected_dets=          18          15
+ j,n_connected_dets=          50           4
+ j,n_connected_dets=          58           1
+ j,n_connected_dets=          53           1
+ j,n_connected_dets=          51           1
+find_doubly_excited: allocating dets_up etc. arrays of size       702 = 7.0200E+02
+Initially allocating (for merging) iorder etc. arrays of size       702 = 7.0200E+02
+find_doubly_excited: Performing sort and merge of size        702 = 7.0200E+02
+is_done, is_not_done         1       137       138
+Performing final sort/merge of size                 223 = 2.2300E+02
+
+After allocating min_H_already_done of size       209, Memory avail (MB)=                                               6056.73    6027.06    6026.93
+ndets_global=       209
+END OF get_next_det_list CP, REAL TIME                                  0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       219 = 2.19E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+
+n_unique_beta_new,ndet_new=      29        71
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.08       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+
+n_det=         209  2.09E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.09       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       209  2.09E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.09       0.00        0        0, Mem avail    6056.73    6027.06    6026.93
+Iteration, Eigenvalues=  1   -74.536321338
+Iteration, Eigenvalues=  2   -74.538099251
+Iteration, Eigenvalues=  3   -74.538267971
+Iteration, Eigenvalues=  4   -74.538336993
+Iteration, Eigenvalues=  5   -74.538391790
+Iteration, Eigenvalues=  6   -74.538466702
+Iteration, Eigenvalues=  7   -74.538553371
+Iteration, Eigenvalues=  8   -74.538639767
+Iteration, Eigenvalues=  9   -74.538713341
+Iteration, Eigenvalues= 10   -74.538787143
+Iteration, Eigenvalues= 11   -74.538845450
+Iteration, Eigenvalues= 12   -74.538890409
+Iteration, Eigenvalues= 13   -74.538911148
+Iteration, Eigenvalues= 14   -74.538920442
+Iteration, Eigenvalues= 15   -74.538924271
+Iteration, Eigenvalues= 16   -74.538925361
+Iteration, Eigenvalues= 17   -74.538925621
+Iteration, Eigenvalues= 18   -74.538925705
+Iteration, Eigenvalues= 19   -74.538925741
+Iteration, Eigenvalues= 20   -74.538925755
+Iteration, Eigenvalues= 21   -74.538925761
+Iteration, Eigenvalues= 22   -74.538925765
+Iteration, Eigenvalues= 23   -74.538925767
+Iteration, Eigenvalues= 24   -74.538925767
+Iteration, Eigenvalues= 25   -74.538925768
+davidson_sparse: n, iter, Lowest eigenvalue =       209  26   -74.5389257676
+END OF davidson_sparse CP, REAL TIME                                    0.10       0.01        0        0, Mem avail    6056.73    6026.92    6026.92
+ State           1 :
+
+Wavefunction has      209 = 2.09E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                    1111                                    1111             15             15  0  0.806252481
+                                   11011                                   11011             27             27  2 -0.346608077
+                                  100111                                  100111             39             39  2 -0.301724790
+                                   11101                                 1001011             29             75  2 -0.127355709
+                                  110011                                  110011             51             51  4  0.122772674
+                                  100111                                10001011             39            139  2  0.106394717
+                                 1001101                                 1001101             77             77  2 -0.099992539
+                                  110011                                 1001011             51             75  3 -0.082770378
+                                10001011                                10001011            139            139  2 -0.080493890
+                                 1001011                                 1001011             75             75  2  0.077507833
+                                   11101                                 1001110             29             78  2  0.067411171
+                                   11110                                 1001101             30             77  2  0.065317180
+                                    1111                                10100011             15            163  2  0.064193089
+                                   11101                                  110011             29             51  3  0.062977556
+                                10100011                                10100011            163            163  4  0.061681056
+                                  110101                                 1100011             53             99  4 -0.059576668
+                                  101011                                 1010011             43             83  3 -0.051113871
+                                  100111                                10001110             39            142  2  0.049193217
+                                 1100101                                 1100101            101            101  4  0.048656954
+                                 1100011                                 1100011             99             99  4 -0.046495237
+
+Lowest eigenvalues=   -74.538926
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.65004306
+     1         1    0.00093770
+     2        32    0.29313642
+     3        55    0.01930467
+     4        87    0.03557980
+     5        21    0.00042923
+     6        12    0.00056913
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.964938
+     2     5    1.920760
+     3     1    1.609488
+     4     2    1.711810
+     5     3    0.341888
+     6     6    0.292601
+     7     7    0.097702
+     8     5    0.060814
+
+Seniority n_seniority sum_w2_seniority
+     0       54    0.917711
+     1       23    0.006761
+     2      107    0.074399
+     3       14    0.000768
+     4       11    0.000361
+n_det_sym, n_det_individual=       209       364
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+Iteration   6 eps1= 2.0E-3 ndets=       209 = 2.09E+02 energy=      -74.538926
+
+HCI iter=  7 eps_var=  2.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+ j,n_connected_dets=           1          33
+ j,n_connected_dets=         209           1
+ j,n_connected_dets=         104           1
+ j,n_connected_dets=          52           2
+ j,n_connected_dets=          26          30
+ j,n_connected_dets=          38          24
+ j,n_connected_dets=          43           4
+ j,n_connected_dets=          40           9
+ j,n_connected_dets=          38          24
+ j,n_connected_dets=          40           9
+find_doubly_excited: allocating dets_up etc. arrays of size      1244 = 1.2440E+03
+Initially allocating (for merging) iorder etc. arrays of size      1244 = 1.2440E+03
+is_done, is_not_done        34       175       209
+Performing final sort/merge of size                 516 = 5.1600E+02
+
+After allocating min_H_already_done of size       243, Memory avail (MB)=                                               6056.73    6027.07    6026.98
+ndets_global=       243
+END OF get_next_det_list CP, REAL TIME                                  0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       255 = 2.55E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+
+n_unique_beta_new,ndet_new=      21        34
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.10       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+
+n_det=         243  2.43E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.11       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       243  2.43E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.11       0.00        0        0, Mem avail    6056.73    6027.07    6026.98
+Iteration, Eigenvalues=  1   -74.538925768
+Iteration, Eigenvalues=  2   -74.539853770
+Iteration, Eigenvalues=  3   -74.540063871
+Iteration, Eigenvalues=  4   -74.540150598
+Iteration, Eigenvalues=  5   -74.540202166
+Iteration, Eigenvalues=  6   -74.540279756
+Iteration, Eigenvalues=  7   -74.540343233
+Iteration, Eigenvalues=  8   -74.540401012
+Iteration, Eigenvalues=  9   -74.540444438
+Iteration, Eigenvalues= 10   -74.540511763
+Iteration, Eigenvalues= 11   -74.540554474
+Iteration, Eigenvalues= 12   -74.540600425
+Iteration, Eigenvalues= 13   -74.540650252
+Iteration, Eigenvalues= 14   -74.540677286
+Iteration, Eigenvalues= 15   -74.540691455
+Iteration, Eigenvalues= 16   -74.540695772
+Iteration, Eigenvalues= 17   -74.540697156
+Iteration, Eigenvalues= 18   -74.540697644
+Iteration, Eigenvalues= 19   -74.540697779
+Iteration, Eigenvalues= 20   -74.540697813
+Iteration, Eigenvalues= 21   -74.540697832
+Iteration, Eigenvalues= 22   -74.540697843
+Iteration, Eigenvalues= 23   -74.540697855
+Iteration, Eigenvalues= 24   -74.540697861
+Iteration, Eigenvalues= 25   -74.540697864
+Iteration, Eigenvalues= 26   -74.540697865
+Iteration, Eigenvalues= 27   -74.540697865
+Iteration, Eigenvalues= 28   -74.540697865
+davidson_sparse: n, iter, Lowest eigenvalue =       243  29   -74.5406978654
+END OF davidson_sparse CP, REAL TIME                                    0.12       0.01        0        0, Mem avail    6056.73    6026.91    6026.91
+ State           1 :
+
+Wavefunction has      243 = 2.43E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                    1111                                    1111             15             15  0  0.699413268
+                                   11011                                   11011             27             27  2 -0.486898093
+                                  100111                                  100111             39             39  2 -0.262085021
+                                  110011                                  110011             51             51  4  0.175566373
+                                 1001011                                 1001011             75             75  2  0.137322151
+                                   11101                                 1001011             29             75  2 -0.136629565
+                                 1001101                                 1001101             77             77  2 -0.111650803
+                                  101011                                 1010011             43             83  3 -0.108435307
+                                  110011                                 1001011             51             75  3 -0.108155978
+                                  100111                                10001011             39            139  2  0.091682683
+                                   11101                                  110011             29             51  3  0.085958474
+                                 1100011                                 1100011             99             99  4 -0.078564354
+                                    1111                                 1011001             15             89  2  0.071550478
+                                   10111                                  111001             23             57  3 -0.067321214
+                                10001011                                10001011            139            139  2 -0.066449015
+                                  110101                                 1100011             53             99  4 -0.065288116
+                                 1100101                                 1100101            101            101  4  0.060787163
+                                   11101                                 1001110             29             78  2  0.058971657
+                                    1111                                10100011             15            163  2  0.056971301
+                                   10111                                   10111             23             23  2  0.053784852
+
+Lowest eigenvalues=   -74.540698
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.48917892
+     1         1    0.00060378
+     2        32    0.40206827
+     3        62    0.04586054
+     4       102    0.06046044
+     5        30    0.00109442
+     6        15    0.00073364
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.967449
+     2     5    1.887588
+     3     1    1.267828
+     4     2    1.683097
+     5     3    0.660748
+     6     6    0.314588
+     7     7    0.166875
+     8     5    0.051828
+
+Seniority n_seniority sum_w2_seniority
+     0       57    0.890229
+     1       25    0.005728
+     2      125    0.102166
+     3       21    0.001317
+     4       15    0.000560
+n_det_sym, n_det_individual=       243       429
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.12       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+Iteration   7 eps1= 2.0E-3 ndets=       243 = 2.43E+02 energy=      -74.540698
+
+HCI iter=  8 eps_var=  2.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.12       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+ j,n_connected_dets=           1          33
+ j,n_connected_dets=         243           1
+ j,n_connected_dets=         121           1
+ j,n_connected_dets=          60          11
+ j,n_connected_dets=          30          40
+ j,n_connected_dets=          44           8
+ j,n_connected_dets=          36          20
+ j,n_connected_dets=          39           6
+ j,n_connected_dets=          37          25
+ j,n_connected_dets=          89           1
+ j,n_connected_dets=          74           1
+ j,n_connected_dets=          66           5
+ j,n_connected_dets=          62           3
+ j,n_connected_dets=          60          11
+ j,n_connected_dets=          69           1
+ j,n_connected_dets=          67           1
+find_doubly_excited: allocating dets_up etc. arrays of size      1529 = 1.5290E+03
+Initially allocating (for merging) iorder etc. arrays of size      1529 = 1.5290E+03
+is_done, is_not_done        51       192       243
+Performing final sort/merge of size                 502 = 5.0200E+02
+
+After allocating min_H_already_done of size       288, Memory avail (MB)=                                               6056.73    6027.07    6026.93
+ndets_global=       288
+END OF get_next_det_list CP, REAL TIME                                  0.12       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.12       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.12       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       302 = 3.02E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.12       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.13       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+
+n_unique_beta_new,ndet_new=      23        45
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.13       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+
+n_det=         288  2.88E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.13       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       288  2.88E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.13       0.00        0        0, Mem avail    6056.73    6027.07    6026.93
+Iteration, Eigenvalues=  1   -74.540697865
+Iteration, Eigenvalues=  2   -74.541405323
+Iteration, Eigenvalues=  3   -74.541507048
+Iteration, Eigenvalues=  4   -74.541545554
+Iteration, Eigenvalues=  5   -74.541580074
+Iteration, Eigenvalues=  6   -74.541613849
+Iteration, Eigenvalues=  7   -74.541652719
+Iteration, Eigenvalues=  8   -74.541688079
+Iteration, Eigenvalues=  9   -74.541739400
+Iteration, Eigenvalues= 10   -74.541797943
+Iteration, Eigenvalues= 11   -74.541839177
+Iteration, Eigenvalues= 12   -74.541863828
+Iteration, Eigenvalues= 13   -74.541887750
+Iteration, Eigenvalues= 14   -74.541908218
+Iteration, Eigenvalues= 15   -74.541920711
+Iteration, Eigenvalues= 16   -74.541926034
+Iteration, Eigenvalues= 17   -74.541928404
+Iteration, Eigenvalues= 18   -74.541929332
+Iteration, Eigenvalues= 19   -74.541929733
+Iteration, Eigenvalues= 20   -74.541929968
+Iteration, Eigenvalues= 21   -74.541930259
+Iteration, Eigenvalues= 22   -74.541930618
+Iteration, Eigenvalues= 23   -74.541930835
+Iteration, Eigenvalues= 24   -74.541930930
+Iteration, Eigenvalues= 25   -74.541930946
+Iteration, Eigenvalues= 26   -74.541930948
+Iteration, Eigenvalues= 27   -74.541930949
+Iteration, Eigenvalues= 28   -74.541930949
+Iteration, Eigenvalues= 29   -74.541930949
+davidson_sparse: n, iter, Lowest eigenvalue =       288  30   -74.5419309494
+END OF davidson_sparse CP, REAL TIME                                    0.14       0.01        0        0, Mem avail    6056.73    6026.76    6026.76
+ State           1 :
+
+Wavefunction has      288 = 2.88E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                   11011                                   11011             27             27  2  0.579298532
+                                    1111                                    1111             15             15  0 -0.567204332
+                                  100111                                  100111             39             39  2  0.214133347
+                                  110011                                  110011             51             51  4 -0.203930176
+                                 1001011                                 1001011             75             75  2 -0.180664635
+                                   10111                                   10111             23             23  2 -0.172637181
+                                  101011                                 1010011             43             83  3  0.139840643
+                                   11101                                 1001011             29             75  2  0.138699330
+                                  110011                                 1001011             51             75  3  0.125977755
+                                 1001101                                 1001101             77             77  2  0.112050039
+                                   11101                                  110011             29             51  3 -0.107480147
+                                    1111                                 1011001             15             89  2 -0.098648447
+                                 1100011                                 1100011             99             99  4  0.098203662
+                                   10111                                  111001             23             57  3  0.095529272
+                                   11101                                   11101             29             29  2 -0.075653688
+                                  100111                                10001011             39            139  2 -0.074034793
+                                 1000111                                 1000111             71             71  2  0.071124119
+                                 1100101                                 1100101            101            101  4 -0.069867900
+                                  110101                                 1100011             53             99  4  0.067317318
+                                  110101                                  110101             53             53  4  0.064215061
+
+Lowest eigenvalues=   -74.541931
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.32172075
+     1         1    0.00032198
+     2        32    0.51986743
+     3        68    0.07424276
+     4       128    0.08121169
+     5        41    0.00185350
+     6        17    0.00078188
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.967591
+     2     5    1.849055
+     3     1    0.975278
+     4     2    1.606485
+     5     3    0.992937
+     6     6    0.326569
+     7     7    0.237389
+     8     5    0.044696
+
+Seniority n_seniority sum_w2_seniority
+     0       64    0.862953
+     1       29    0.005054
+     2      143    0.129383
+     3       25    0.001767
+     4       27    0.000842
+n_det_sym, n_det_individual=       288       512
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.14       0.00        0        0, Mem avail    6056.73    6027.05    6026.80
+Iteration   8 eps1= 2.0E-3 ndets=       288 = 2.88E+02 energy=      -74.541931
+
+HCI iter=  9 eps_var=  1.5000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.14       0.00        0        0, Mem avail    6056.73    6027.08    6026.79
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         288           1
+ j,n_connected_dets=         144           1
+ j,n_connected_dets=          72           2
+ j,n_connected_dets=          36          13
+ j,n_connected_dets=          18          45
+ j,n_connected_dets=          26          52
+ j,n_connected_dets=          29          19
+ j,n_connected_dets=          27          18
+ j,n_connected_dets=          53           8
+ j,n_connected_dets=          61           4
+find_doubly_excited: allocating dets_up etc. arrays of size      1595 = 1.5950E+03
+Initially allocating (for merging) iorder etc. arrays of size      1595 = 1.5950E+03
+is_done, is_not_done        43       245       288
+Performing final sort/merge of size                 820 = 8.2000E+02
+
+After allocating min_H_already_done of size       325, Memory avail (MB)=                                               6056.73    6026.94    6026.79
+ndets_global=       325
+END OF get_next_det_list CP, REAL TIME                                  0.15       0.00        0        0, Mem avail    6056.73    6026.94    6026.79
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.15       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.15       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       341 = 3.41E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.15       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.15       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+
+n_unique_beta_new,ndet_new=      22        37
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.15       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+
+n_det=         325  3.25E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.15       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       325  3.25E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.16       0.00        0        0, Mem avail    6056.73    6027.00    6026.80
+Iteration, Eigenvalues=  1   -74.541930949
+Iteration, Eigenvalues=  2   -74.542836946
+Iteration, Eigenvalues=  3   -74.542916491
+Iteration, Eigenvalues=  4   -74.542945957
+Iteration, Eigenvalues=  5   -74.542968884
+Iteration, Eigenvalues=  6   -74.542994965
+Iteration, Eigenvalues=  7   -74.543020989
+Iteration, Eigenvalues=  8   -74.543044941
+Iteration, Eigenvalues=  9   -74.543079758
+Iteration, Eigenvalues= 10   -74.543123612
+Iteration, Eigenvalues= 11   -74.543165877
+Iteration, Eigenvalues= 12   -74.543192429
+Iteration, Eigenvalues= 13   -74.543206652
+Iteration, Eigenvalues= 14   -74.543217394
+Iteration, Eigenvalues= 15   -74.543226077
+Iteration, Eigenvalues= 16   -74.543231249
+Iteration, Eigenvalues= 17   -74.543233597
+Iteration, Eigenvalues= 18   -74.543234553
+Iteration, Eigenvalues= 19   -74.543234927
+Iteration, Eigenvalues= 20   -74.543235064
+Iteration, Eigenvalues= 21   -74.543235107
+Iteration, Eigenvalues= 22   -74.543235135
+Iteration, Eigenvalues= 23   -74.543235172
+Iteration, Eigenvalues= 24   -74.543235225
+Iteration, Eigenvalues= 25   -74.543235264
+Iteration, Eigenvalues= 26   -74.543235278
+Iteration, Eigenvalues= 27   -74.543235282
+Iteration, Eigenvalues= 28   -74.543235284
+Iteration, Eigenvalues= 29   -74.543235284
+Iteration, Eigenvalues= 30   -74.543235285
+davidson_sparse: n, iter, Lowest eigenvalue =       325  31   -74.5432352846
+END OF davidson_sparse CP, REAL TIME                                    0.17       0.01        0        0, Mem avail    6056.73    6026.74    6026.74
+ State           1 :
+
+Wavefunction has      325 = 3.25E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                   11011                                   11011             27             27  2  0.615662091
+                                    1111                                    1111             15             15  0 -0.431810583
+                                   10111                                   10111             23             23  2 -0.311250126
+                                  110011                                  110011             51             51  4 -0.210495491
+                                 1001011                                 1001011             75             75  2 -0.203538070
+                                  100111                                  100111             39             39  2  0.165215107
+                                  101011                                 1010011             43             83  3  0.154409355
+                                  110011                                 1001011             51             75  3  0.131888479
+                                   11101                                 1001011             29             75  2  0.131809105
+                                   11101                                  110011             29             51  3 -0.123274892
+                                 1000111                                 1000111             71             71  2  0.122703504
+                                    1111                                 1011001             15             89  2 -0.112642510
+                                   10111                                  111001             23             57  3  0.110510120
+                                 1100011                                 1100011             99             99  4  0.106086725
+                                 1001101                                 1001101             77             77  2  0.102866796
+                                   11101                                   11101             29             29  2 -0.089062847
+                                  110101                                  110101             53             53  4  0.088443872
+                                 1100101                                 1100101            101            101  4 -0.075128443
+                                  110101                                 1100011             53             99  4  0.064648290
+                                 1001101                                 1100011             77             99  3 -0.060604031
+
+Lowest eigenvalues=   -74.543235
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.18646038
+     1         1    0.00013808
+     2        32    0.62325573
+     3        71    0.09418170
+     4       143    0.09237985
+     5        53    0.00271927
+     6        24    0.00086499
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965798
+     2     5    1.825427
+     3     1    0.839435
+     4     2    1.451840
+     5     3    1.263013
+     6     6    0.319367
+     7     7    0.292205
+     8     5    0.042915
+
+Seniority n_seniority sum_w2_seniority
+     0       65    0.846223
+     1       35    0.005029
+     2      159    0.145402
+     3       31    0.002180
+     4       35    0.001166
+n_det_sym, n_det_individual=       325       585
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+Iteration   9 eps1= 1.5E-3 ndets=       325 = 3.25E+02 energy=      -74.543235
+
+HCI iter= 10 eps_var=  1.5000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         325           1
+ j,n_connected_dets=         162           1
+ j,n_connected_dets=          81           2
+ j,n_connected_dets=          40          18
+ j,n_connected_dets=          20          44
+ j,n_connected_dets=          29          15
+ j,n_connected_dets=          24          22
+ j,n_connected_dets=          59           5
+ j,n_connected_dets=          49           9
+ j,n_connected_dets=          68           1
+ j,n_connected_dets=          63          14
+ j,n_connected_dets=          60           6
+ j,n_connected_dets=          60           6
+ j,n_connected_dets=          64          17
+ j,n_connected_dets=          64          17
+find_doubly_excited: allocating dets_up etc. arrays of size      1515 = 1.5150E+03
+Initially allocating (for merging) iorder etc. arrays of size      1515 = 1.5150E+03
+is_done, is_not_done        69       256       325
+Performing final sort/merge of size                 560 = 5.6000E+02
+
+After allocating min_H_already_done of size       334, Memory avail (MB)=                                               6056.73    6027.06    6026.79
+ndets_global=       334
+END OF get_next_det_list CP, REAL TIME                                  0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       350 = 3.50E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.17       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+n_unique_beta_new,ndet_new=       5         9
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.18       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+n_det=         334  3.34E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.18       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       334  3.34E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.18       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+Iteration, Eigenvalues=  1   -74.543235285
+Iteration, Eigenvalues=  2   -74.543399458
+Iteration, Eigenvalues=  3   -74.543416657
+Iteration, Eigenvalues=  4   -74.543420682
+Iteration, Eigenvalues=  5   -74.543423504
+Iteration, Eigenvalues=  6   -74.543426803
+Iteration, Eigenvalues=  7   -74.543430798
+Iteration, Eigenvalues=  8   -74.543437199
+Iteration, Eigenvalues=  9   -74.543446941
+Iteration, Eigenvalues= 10   -74.543452464
+Iteration, Eigenvalues= 11   -74.543454408
+Iteration, Eigenvalues= 12   -74.543455010
+Iteration, Eigenvalues= 13   -74.543455492
+Iteration, Eigenvalues= 14   -74.543456173
+Iteration, Eigenvalues= 15   -74.543456705
+Iteration, Eigenvalues= 16   -74.543457241
+Iteration, Eigenvalues= 17   -74.543457753
+Iteration, Eigenvalues= 18   -74.543458082
+Iteration, Eigenvalues= 19   -74.543458271
+Iteration, Eigenvalues= 20   -74.543458358
+Iteration, Eigenvalues= 21   -74.543458428
+Iteration, Eigenvalues= 22   -74.543458491
+Iteration, Eigenvalues= 23   -74.543458519
+Iteration, Eigenvalues= 24   -74.543458527
+Iteration, Eigenvalues= 25   -74.543458529
+Iteration, Eigenvalues= 26   -74.543458529
+Iteration, Eigenvalues= 27   -74.543458529
+davidson_sparse: n, iter, Lowest eigenvalue =       334  28   -74.5434585295
+END OF davidson_sparse CP, REAL TIME                                    0.19       0.01        0        0, Mem avail    6056.73    6026.79    6026.79
+ State           1 :
+
+Wavefunction has      334 = 3.34E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                   11011                                   11011             27             27  2  0.610143022
+                                    1111                                    1111             15             15  0 -0.391066773
+                                   10111                                   10111             23             23  2 -0.375573844
+                                  110011                                  110011             51             51  4 -0.204475588
+                                 1001011                                 1001011             75             75  2 -0.203554202
+                                  101011                                 1010011             43             83  3  0.152428552
+                                  100111                                  100111             39             39  2  0.151028308
+                                 1000111                                 1000111             71             71  2  0.145555053
+                                  110011                                 1001011             51             75  3  0.130566477
+                                   11101                                 1001011             29             75  2  0.128150619
+                                   11101                                  110011             29             51  3 -0.127157285
+                                    1111                                 1011001             15             89  2 -0.109667458
+                                   10111                                  111001             23             57  3  0.109429669
+                                 1100011                                 1100011             99             99  4  0.104371319
+                                 1001101                                 1001101             77             77  2  0.095951185
+                                  110101                                  110101             53             53  4  0.094066393
+                                   11101                                   11101             29             29  2 -0.084375241
+                                 1100101                                 1100101            101            101  4 -0.075212750
+                                  110101                                 1100011             53             99  4  0.062616718
+                                 1001101                                 1100011             77             99  3 -0.062204265
+
+Lowest eigenvalues=   -74.543459
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.15293322
+     1         1    0.00010214
+     2        32    0.65645882
+     3        72    0.09599598
+     4       145    0.09090553
+     5        57    0.00279410
+     6        26    0.00081020
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965727
+     2     5    1.829139
+     3     1    0.861343
+     4     2    1.360330
+     5     3    1.335339
+     6     6    0.304073
+     7     7    0.300429
+     8     5    0.043621
+
+Seniority n_seniority sum_w2_seniority
+     0       67    0.848110
+     1       36    0.005107
+     2      165    0.143489
+     3       31    0.002151
+     4       35    0.001143
+n_det_sym, n_det_individual=       334       601
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+Iteration  10 eps1= 1.5E-3 ndets=       334 = 3.34E+02 energy=      -74.543459
+
+HCI iter= 11 eps_var=  1.5000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         334           1
+ j,n_connected_dets=         167           1
+ j,n_connected_dets=          83           4
+ j,n_connected_dets=          41          19
+ j,n_connected_dets=          61          17
+ j,n_connected_dets=          70          11
+ j,n_connected_dets=          74          10
+ j,n_connected_dets=          76           2
+ j,n_connected_dets=          74          10
+ j,n_connected_dets=         124           1
+ j,n_connected_dets=         103           3
+ j,n_connected_dets=         112           1
+ j,n_connected_dets=         107           2
+find_doubly_excited: allocating dets_up etc. arrays of size      1727 = 1.7270E+03
+Initially allocating (for merging) iorder etc. arrays of size      1727 = 1.7270E+03
+is_done, is_not_done        92       242       334
+Performing final sort/merge of size                 395 = 3.9500E+02
+
+After allocating min_H_already_done of size       338, Memory avail (MB)=                                               6056.73    6027.06    6026.79
+ndets_global=       338
+END OF get_next_det_list CP, REAL TIME                                  0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       354 = 3.54E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.19       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+n_unique_beta_new,ndet_new=       3         4
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.20       0.00        0        0, Mem avail    6056.73    6027.06    6026.79
+
+n_det=         338  3.38E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.20       0.00        0        0, Mem avail    6056.69    6027.02    6026.75
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       338  3.38E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.20       0.00        0        0, Mem avail    6056.69    6027.02    6026.75
+Iteration, Eigenvalues=  1   -74.543458530
+Iteration, Eigenvalues=  2   -74.543470925
+Iteration, Eigenvalues=  3   -74.543471599
+Iteration, Eigenvalues=  4   -74.543471724
+Iteration, Eigenvalues=  5   -74.543471778
+Iteration, Eigenvalues=  6   -74.543471817
+Iteration, Eigenvalues=  7   -74.543471859
+Iteration, Eigenvalues=  8   -74.543471936
+Iteration, Eigenvalues=  9   -74.543472011
+Iteration, Eigenvalues= 10   -74.543472069
+Iteration, Eigenvalues= 11   -74.543472117
+Iteration, Eigenvalues= 12   -74.543472158
+Iteration, Eigenvalues= 13   -74.543472191
+Iteration, Eigenvalues= 14   -74.543472216
+Iteration, Eigenvalues= 15   -74.543472234
+Iteration, Eigenvalues= 16   -74.543472249
+Iteration, Eigenvalues= 17   -74.543472258
+Iteration, Eigenvalues= 18   -74.543472262
+Iteration, Eigenvalues= 19   -74.543472264
+Iteration, Eigenvalues= 20   -74.543472267
+Iteration, Eigenvalues= 21   -74.543472271
+Iteration, Eigenvalues= 22   -74.543472275
+Iteration, Eigenvalues= 23   -74.543472277
+Iteration, Eigenvalues= 24   -74.543472278
+Iteration, Eigenvalues= 25   -74.543472279
+Iteration, Eigenvalues= 26   -74.543472279
+davidson_sparse: n, iter, Lowest eigenvalue =       338  27   -74.5434722788
+END OF davidson_sparse CP, REAL TIME                                    0.21       0.01        0        0, Mem avail    6056.69    6026.74    6026.74
+ State           1 :
+
+Wavefunction has      338 = 3.38E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                   11011                                   11011             27             27  2  0.609221410
+                                    1111                                    1111             15             15  0 -0.386556326
+                                   10111                                   10111             23             23  2 -0.382577237
+                                  110011                                  110011             51             51  4 -0.203662513
+                                 1001011                                 1001011             75             75  2 -0.203431220
+                                  101011                                 1010011             43             83  3  0.152205991
+                                  100111                                  100111             39             39  2  0.149489370
+                                 1000111                                 1000111             71             71  2  0.148031374
+                                  110011                                 1001011             51             75  3  0.130228180
+                                   11101                                 1001011             29             75  2  0.127510211
+                                   11101                                  110011             29             51  3 -0.127223349
+                                    1111                                 1011001             15             89  2 -0.109476376
+                                   10111                                  111001             23             57  3  0.109450564
+                                 1100011                                 1100011             99             99  4  0.104095462
+                                 1001101                                 1001101             77             77  2  0.095076222
+                                  110101                                  110101             53             53  4  0.094611200
+                                   11101                                   11101             29             29  2 -0.083687987
+                                 1100101                                 1100101            101            101  4 -0.075185142
+                                  110101                                 1100011             53             99  4  0.062277781
+                                 1001101                                 1100011             77             99  3 -0.062162964
+
+Lowest eigenvalues=   -74.543472
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.14942579
+     1         1    0.00009864
+     2        32    0.66015392
+     3        72    0.09607502
+     4       146    0.09064924
+     5        59    0.00279351
+     6        27    0.00080387
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965730
+     2     5    1.829792
+     3     1    0.864978
+     4     2    1.349481
+     5     3    1.343051
+     6     6    0.302111
+     7     7    0.301135
+     8     5    0.043722
+
+Seniority n_seniority sum_w2_seniority
+     0       68    0.848482
+     1       36    0.005118
+     2      168    0.143115
+     3       31    0.002145
+     4       35    0.001140
+n_det_sym, n_det_individual=       338       608
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.21       0.00        0        0, Mem avail    6056.69    6027.03    6026.75
+Iteration  11 eps1= 1.5E-3 ndets=       338 = 3.38E+02 energy=      -74.543472
+
+HCI iter= 12 eps_var=  1.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.21       0.00        0        0, Mem avail    6056.69    6027.03    6026.75
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         338           1
+ j,n_connected_dets=         169           3
+ j,n_connected_dets=          84          12
+ j,n_connected_dets=          42          20
+ j,n_connected_dets=         125           4
+ j,n_connected_dets=         104           5
+ j,n_connected_dets=          93          24
+ j,n_connected_dets=          97          20
+ j,n_connected_dets=          99           5
+ j,n_connected_dets=          97          20
+ j,n_connected_dets=         252           1
+ j,n_connected_dets=         210           1
+ j,n_connected_dets=         189           1
+ j,n_connected_dets=         178           1
+ j,n_connected_dets=         173           1
+ j,n_connected_dets=         170           3
+ j,n_connected_dets=         170           3
+find_doubly_excited: allocating dets_up etc. arrays of size      2302 = 2.3020E+03
+Initially allocating (for merging) iorder etc. arrays of size      2302 = 2.3020E+03
+is_done, is_not_done        39       299       338
+Performing final sort/merge of size                1047 = 1.0470E+03
+
+After allocating min_H_already_done of size       347, Memory avail (MB)=                                               6056.69    6026.88    6026.75
+ndets_global=       347
+END OF get_next_det_list CP, REAL TIME                                  0.21       0.00        0        0, Mem avail    6056.69    6026.88    6026.75
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.21       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.21       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       364 = 3.64E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.21       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.21       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+
+n_unique_beta_new,ndet_new=       7         9
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.21       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+
+n_det=         347  3.47E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.22       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       347  3.47E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.22       0.00        0        0, Mem avail    6056.69    6027.06    6026.78
+Iteration, Eigenvalues=  1   -74.543472279
+Iteration, Eigenvalues=  2   -74.543497840
+Iteration, Eigenvalues=  3   -74.543498771
+Iteration, Eigenvalues=  4   -74.543498847
+Iteration, Eigenvalues=  5   -74.543498859
+Iteration, Eigenvalues=  6   -74.543498863
+Iteration, Eigenvalues=  7   -74.543498865
+Iteration, Eigenvalues=  8   -74.543498870
+Iteration, Eigenvalues=  9   -74.543498877
+Iteration, Eigenvalues= 10   -74.543498887
+Iteration, Eigenvalues= 11   -74.543498896
+Iteration, Eigenvalues= 12   -74.543498900
+Iteration, Eigenvalues= 13   -74.543498902
+Iteration, Eigenvalues= 14   -74.543498903
+Iteration, Eigenvalues= 15   -74.543498904
+Iteration, Eigenvalues= 16   -74.543498904
+Iteration, Eigenvalues= 17   -74.543498905
+Iteration, Eigenvalues= 18   -74.543498906
+Iteration, Eigenvalues= 19   -74.543498907
+Iteration, Eigenvalues= 20   -74.543498908
+Iteration, Eigenvalues= 21   -74.543498908
+Iteration, Eigenvalues= 22   -74.543498908
+davidson_sparse: n, iter, Lowest eigenvalue =       347  23   -74.5434989079
+END OF davidson_sparse CP, REAL TIME                                    0.22       0.01        0        0, Mem avail    6056.68    6026.76    6026.76
+ State           1 :
+
+Wavefunction has      347 = 3.47E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                   11011                                   11011             27             27  2  0.608717521
+                                    1111                                    1111             15             15  0 -0.385501860
+                                   10111                                   10111             23             23  2 -0.384715055
+                                  110011                                  110011             51             51  4 -0.203346337
+                                 1001011                                 1001011             75             75  2 -0.203302058
+                                  101011                                 1010011             43             83  3  0.152017374
+                                  100111                                  100111             39             39  2  0.149166741
+                                 1000111                                 1000111             71             71  2  0.148876200
+                                  110011                                 1001011             51             75  3  0.130112185
+                                   11101                                 1001011             29             75  2  0.127334480
+                                   11101                                  110011             29             51  3 -0.127275718
+                                    1111                                 1011001             15             89  2 -0.109396855
+                                   10111                                  111001             23             57  3  0.109384697
+                                 1100011                                 1100011             99             99  4  0.103927821
+                                 1001101                                 1001101             77             77  2  0.094814320
+                                  110101                                  110101             53             53  4  0.094723185
+                                   11101                                   11101             29             29  2 -0.083400990
+                                 1100101                                 1100101            101            101  4 -0.075195124
+                                  110101                                 1100011             53             99  4  0.062215857
+                                 1001101                                 1100011             77             99  3 -0.062189736
+
+Lowest eigenvalues=   -74.543499
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.14861168
+     1         1    0.00009792
+     2        32    0.66109764
+     3        72    0.09604849
+     4       149    0.09053848
+     5        62    0.00279153
+     6        29    0.00081225
+     8         1    0.00000201
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965653
+     2     5    1.829992
+     3     1    0.866822
+     4     2    1.346094
+     5     3    1.344813
+     6     6    0.301504
+     7     7    0.301311
+     8     5    0.043812
+
+Seniority n_seniority sum_w2_seniority
+     0       70    0.848604
+     1       38    0.005132
+     2      168    0.142977
+     3       36    0.002150
+     4       35    0.001138
+n_det_sym, n_det_individual=       347       624
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.22       0.00        0        0, Mem avail    6056.68    6027.04    6026.76
+Iteration  12 eps1= 1.0E-3 ndets=       347 = 3.47E+02 energy=      -74.543499
+
+HCI iter= 13 eps_var=  1.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.22       0.00        0        0, Mem avail    6056.68    6027.04    6026.76
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         347           1
+ j,n_connected_dets=         173           1
+ j,n_connected_dets=          86           6
+ j,n_connected_dets=          43          19
+ j,n_connected_dets=          63           1
+ j,n_connected_dets=          52          16
+ j,n_connected_dets=          56          20
+ j,n_connected_dets=          58          12
+ j,n_connected_dets=          58          12
+ j,n_connected_dets=          73          26
+ j,n_connected_dets=          67          10
+ j,n_connected_dets=          64          22
+ j,n_connected_dets=          64          22
+ j,n_connected_dets=          69          30
+ j,n_connected_dets=          67          10
+ j,n_connected_dets=          77          30
+ j,n_connected_dets=          79           5
+ j,n_connected_dets=          77          30
+ j,n_connected_dets=         128          10
+ j,n_connected_dets=         149           2
+ j,n_connected_dets=         138           3
+ j,n_connected_dets=         132           2
+ j,n_connected_dets=         129           3
+find_doubly_excited: allocating dets_up etc. arrays of size      2240 = 2.2400E+03
+Initially allocating (for merging) iorder etc. arrays of size      2240 = 2.2400E+03
+is_done, is_not_done        55       292       347
+Performing final sort/merge of size                 352 = 3.5200E+02
+
+After allocating min_H_already_done of size       347, Memory avail (MB)=                                               6056.68    6026.90    6026.76
+ndets_global=       347
+END OF get_next_det_list CP, REAL TIME                                  0.23       0.00        0        0, Mem avail    6056.68    6026.90    6026.76
+
+Cycling hci iteration because ndets_global_new==ndets_global_old
+
+HCI iter= 14 eps_var=  1.0000E-03
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.23       0.00        0        0, Mem avail    6056.68    6026.90    6026.76
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         347           1
+ j,n_connected_dets=         173           1
+ j,n_connected_dets=          86           6
+ j,n_connected_dets=          43          19
+ j,n_connected_dets=          63           1
+ j,n_connected_dets=          52          16
+ j,n_connected_dets=          56          20
+ j,n_connected_dets=          58          12
+ j,n_connected_dets=          58          12
+ j,n_connected_dets=          73          26
+ j,n_connected_dets=          67          10
+ j,n_connected_dets=          64          22
+ j,n_connected_dets=          64          22
+ j,n_connected_dets=          69          30
+ j,n_connected_dets=          67          10
+ j,n_connected_dets=          77          30
+ j,n_connected_dets=          79           5
+ j,n_connected_dets=          77          30
+ j,n_connected_dets=         128          10
+ j,n_connected_dets=         149           2
+ j,n_connected_dets=         138           3
+ j,n_connected_dets=         132           2
+ j,n_connected_dets=         129           3
+find_doubly_excited: allocating dets_up etc. arrays of size      2240 = 2.2400E+03
+Initially allocating (for merging) iorder etc. arrays of size      2240 = 2.2400E+03
+is_done, is_not_done        90       257       347
+Performing final sort/merge of size                 347 = 3.4700E+02
+
+After allocating min_H_already_done of size       347, Memory avail (MB)=                                               6056.68    6026.90    6026.76
+ndets_global=       347
+END OF get_next_det_list CP, REAL TIME                                  0.23       0.00        0        0, Mem avail    6056.68    6026.90    6026.76
+
+Cycling hci iteration because ndets_global_new==ndets_global_old
+
+HCI iter= 15 eps_var=  5.0000E-04
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.23       0.00        0        0, Mem avail    6056.68    6026.90    6026.76
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         347           1
+ j,n_connected_dets=         173          12
+ j,n_connected_dets=          86          19
+ j,n_connected_dets=         259           1
+ j,n_connected_dets=         215           3
+ j,n_connected_dets=         193           8
+ j,n_connected_dets=         203           5
+ j,n_connected_dets=         236           1
+ j,n_connected_dets=         225           1
+ j,n_connected_dets=         219           1
+ j,n_connected_dets=         216           3
+ j,n_connected_dets=         216           3
+find_doubly_excited: allocating dets_up etc. arrays of size      3873 = 3.8730E+03
+Initially allocating (for merging) iorder etc. arrays of size      3873 = 3.8730E+03
+is_done, is_not_done        18       329       347
+Performing final sort/merge of size                2605 = 2.6050E+03
+
+After allocating min_H_already_done of size       363, Memory avail (MB)=                                               6056.56    6026.78    6026.65
+ndets_global=       363
+END OF get_next_det_list CP, REAL TIME                                  0.23       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+
+BEG OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.23       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+
+BEG OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.23       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+Constructing sparse Hamiltonian using partial connections
+allocating H_indices etc. arrays of size nonzero_elements (estimated)=       381 = 3.81E+02 in generate_sparse_ham_chem
+END OF allocating H_indices etc. CP, REAL TIME                          0.24       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+
+BEG OF create beta and alpha-1 helper lists CP, REAL TIME               0.24       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+
+n_unique_beta_new,ndet_new=       9        16
+END OF create beta and alpha-1 helper lists CP, REAL TIME               0.24       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+
+n_det=         363  3.63E+02, # of nonzero elem in H=             0  0.00E+00, average # of nonzero elem=     0.0
+
+END OF generate_sparse_ham_chem_upper_triangular_serial CP, REAL        0.24       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+
+Performing Davidson using sparsely stored H and matrix_lanczos in more_tools, n_det=       363  3.63E+02
+
+BEG OF davidson_sparse CP, REAL TIME                                    0.24       0.00        0        0, Mem avail    6056.56    6026.78    6026.65
+Iteration, Eigenvalues=  1   -74.543498908
+Iteration, Eigenvalues=  2   -74.543527336
+Iteration, Eigenvalues=  3   -74.543528811
+Iteration, Eigenvalues=  4   -74.543528990
+Iteration, Eigenvalues=  5   -74.543529057
+Iteration, Eigenvalues=  6   -74.543529079
+Iteration, Eigenvalues=  7   -74.543529089
+Iteration, Eigenvalues=  8   -74.543529096
+Iteration, Eigenvalues=  9   -74.543529101
+Iteration, Eigenvalues= 10   -74.543529104
+Iteration, Eigenvalues= 11   -74.543529106
+Iteration, Eigenvalues= 12   -74.543529108
+Iteration, Eigenvalues= 13   -74.543529108
+Iteration, Eigenvalues= 14   -74.543529109
+Iteration, Eigenvalues= 15   -74.543529109
+Iteration, Eigenvalues= 16   -74.543529110
+Iteration, Eigenvalues= 17   -74.543529110
+Iteration, Eigenvalues= 18   -74.543529111
+Iteration, Eigenvalues= 19   -74.543529111
+davidson_sparse: n, iter, Lowest eigenvalue =       363  20   -74.5435291111
+END OF davidson_sparse CP, REAL TIME                                    0.24       0.01        0        0, Mem avail    6056.56    6026.63    6026.63
+ State           1 :
+
+Wavefunction has      363 = 3.63E+02 determinants. Dets. with largest 20 abs coefs are:
+     dets_up                                   dets_dn                                 dets_up   dets_dn    excit_level cdet
+09876543210987654321098765432109876543210987654321098765432109876543210987654321
+                                   11011                                   11011             27             27  2  0.608897135
+                                    1111                                    1111             15             15  0 -0.384916826
+                                   10111                                   10111             23             23  2 -0.384671117
+                                  110011                                  110011             51             51  4 -0.203433832
+                                 1001011                                 1001011             75             75  2 -0.203419400
+                                  101011                                 1010011             43             83  3  0.151955597
+                                  100111                                  100111             39             39  2  0.148898404
+                                 1000111                                 1000111             71             71  2  0.148809054
+                                  110011                                 1001011             51             75  3  0.130397595
+                                   11101                                 1001011             29             75  2  0.127429315
+                                   11101                                  110011             29             51  3 -0.127410695
+                                    1111                                 1011001             15             89  2 -0.109372419
+                                   10111                                  111001             23             57  3  0.109369643
+                                 1100011                                 1100011             99             99  4  0.103984559
+                                 1001101                                 1001101             77             77  2  0.094882743
+                                  110101                                  110101             53             53  4  0.094852487
+                                   11101                                   11101             29             29  2 -0.083484493
+                                 1100101                                 1100101            101            101  4 -0.075154505
+                                  110101                                 1100011             53             99  4  0.062347013
+                                 1001101                                 1100011             77             99  3 -0.062338481
+
+Lowest eigenvalues=   -74.543529
+
+Excit_level  # dets  sum_w2_excit_level
+     0         1    0.14816096
+     1         1    0.00009785
+     2        32    0.66125024
+     3        73    0.09620214
+     4       151    0.09064399
+     5        72    0.00281935
+     6        31    0.00081999
+     7         1    0.00000327
+     8         1    0.00000221
+
+Orbital orb_sym sum_w2_orb
+     1     1    1.965591
+     2     5    1.829686
+     3     1    0.865878
+     4     2    1.346006
+     5     3    1.345609
+     6     6    0.301719
+     7     7    0.301661
+     8     5    0.043850
+
+Seniority n_seniority sum_w2_seniority
+     0       70    0.848383
+     1       40    0.005152
+     2      178    0.143166
+     3       40    0.002159
+     4       35    0.001140
+n_det_sym, n_det_individual=       363       656
+
+END OF diagonalize_sparse_hamiltonian_chem CP, REAL TIME                0.24       0.00        0        0, Mem avail    6056.56    6026.92    6026.77
+Iteration  15 eps1= 5.0E-4 ndets=       363 = 3.63E+02 energy=      -74.543529
+
+HCI iter= 16 eps_var=  5.0000E-04
+
+BEG OF get_next_det_list CP, REAL TIME                                  0.24       0.00        0        0, Mem avail    6056.56    6026.92    6026.77
+ j,n_connected_dets=           1          37
+ j,n_connected_dets=         363           1
+ j,n_connected_dets=         181           4
+ j,n_connected_dets=          90          43
+ j,n_connected_dets=         134          20
+ j,n_connected_dets=         111           5
+ j,n_connected_dets=         100          18
+ j,n_connected_dets=          94          40
+ j,n_connected_dets=          96          38
+ j,n_connected_dets=          96          38
+ j,n_connected_dets=         104          16
+ j,n_connected_dets=         106          16
+ j,n_connected_dets=         106          16
+ j,n_connected_dets=         121          14
+ j,n_connected_dets=         115          12
+ j,n_connected_dets=         112           5
+ j,n_connected_dets=         112           5
+ j,n_connected_dets=         156          16
+ j,n_connected_dets=         166          10
+ j,n_connected_dets=         171          12
+ j,n_connected_dets=         173           4
+ j,n_connected_dets=         171          12
+ j,n_connected_dets=         271           1
+ j,n_connected_dets=         225           3
+ j,n_connected_dets=         247           1
+ j,n_connected_dets=         235           1
+ j,n_connected_dets=         229           3
+ j,n_connected_dets=         231           2
+find_doubly_excited: allocating dets_up etc. arrays of size      5111 = 5.1110E+03
+Initially allocating (for merging) iorder etc. arrays of size      5111 = 5.1110E+03
+is_done, is_not_done        51       312       363
+Performing final sort/merge of size                 373 = 3.7300E+02
+
+After allocating min_H_already_done of size       363, Memory avail (MB)=                                               6056.56    6026.73    6026.73
+ndets_global=       363
+END OF get_next_det_list CP, REAL TIME                                  0.25       0.00        0        0, Mem avail    6056.56    6026.73    6026.73
+
+Exiting variational part because of number of new dets criterion
+ ndets_new:          363 ndets_old         363
+
+Final Iteration  15      363 = 3.63E+02 dets, energy=      -74.543529
+
+BEG OF Computing <S^2> CP, REAL TIME                                    0.25       0.00        0        0, Mem avail    6056.56    6026.93    6026.60
+
+For state  1 <S^2>, S, S_z = -0.010181 -0.010287    0.0
+
+END OF Computing <S^2> CP, REAL TIME                                    0.25       0.00        0        0, Mem avail    6056.56    6026.93    6026.60
+END OF variational part CP, REAL TIME                                   0.25       0.00        0        0, Mem avail    6056.56    6026.93    6026.60
+ Deallocating Hamiltonian
+
+Sorting global dets list so that they can be binary searched
+
+Before det. PT, avail, avail2, avail3=                                                                               6056.56    6026.93    6026.60
+
+Global average n_max_connections per node:     30000000 = 3.00E+07
+
+BEG OF Converting to determinant basis CP, REAL TIME                    0.25       0.00        0        0, Mem avail    6056.56    6026.93    6026.60
+Converting from       363 time-reversal symmetrized linear combinations to       656 individual determinants
+From now on, no more time-reversal symmetry
+
+END OF Converting to determinant basis CP, REAL TIME                    0.25       0.00        0        0, Mem avail    6056.56    6027.27    6026.62
+
+BEG OF Converting to determinant basis CP, REAL TIME                    0.25       0.00        0        0, Mem avail    6056.56    6027.27    6026.62
+END OF Compute global diag_elements CP, REAL TIME                       0.25       0.00        0        0, Mem avail    6056.56    6027.27    6026.62
+END OF Compute local diag_elements CP, REAL TIME                        0.26       0.00        0        0, Mem avail    6056.56    6027.27    6026.62
+
+Estimating # of connections of all var. dets. by sampling connections of local list and summing (duplicates are not merged)
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+
+If eps_pt=     1.0000E-07 estimated number of connections to variational wavefn=        37392 = 3.74E+04
+
+If eps_pt=     1.0000E-07 estimated number of connections per batch=         3399 = 3.40E+03
+
+Computing PT energy using straightforward deterministic method
+
+BEG OF Deterministic 2nd-order PT correction CP, REAL TIME              0.26       0.00        0        0, Mem avail    6056.56    6027.27    6026.62
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3397 = 3.3970E+03
+Performing final sort/merge of size                 829 = 8.2900E+02
+Number of connected dets on this core=          656 = 6.56E+02
+Batch  1: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3396 = 3.3960E+03
+Performing final sort/merge of size                1033 = 1.0330E+03
+Number of connected dets on this core=          656 = 6.56E+02
+Batch  2: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3398 = 3.3980E+03
+Performing final sort/merge of size                 831 = 8.3100E+02
+Number of connected dets on this core=          657 = 6.57E+02
+Batch  3: ndets_conn, dE=       657 = 6.57E+02 -4.284761E-07
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3394 = 3.3940E+03
+Performing final sort/merge of size                 864 = 8.6400E+02
+Number of connected dets on this core=          656 = 6.56E+02
+Batch  4: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3393 = 3.3930E+03
+Performing final sort/merge of size                1203 = 1.2030E+03
+Number of connected dets on this core=          657 = 6.57E+02
+Batch  5: ndets_conn, dE=       657 = 6.57E+02 -4.284761E-07
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3394 = 3.3940E+03
+Performing final sort/merge of size                1098 = 1.0980E+03
+Number of connected dets on this core=          657 = 6.57E+02
+Batch  6: ndets_conn, dE=       657 = 6.57E+02 -4.283673E-07
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3397 = 3.3970E+03
+Performing final sort/merge of size                1134 = 1.1340E+03
+Number of connected dets on this core=          656 = 6.56E+02
+Batch  7: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3396 = 3.3960E+03
+Performing final sort/merge of size                1137 = 1.1370E+03
+Number of connected dets on this core=          656 = 6.56E+02
+Batch  8: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3399 = 3.3990E+03
+Performing final sort/merge of size                1089 = 1.0890E+03
+Number of connected dets on this core=          657 = 6.57E+02
+Batch  9: ndets_conn, dE=       657 = 6.57E+02 -4.283673E-07
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3398 = 3.3980E+03
+Performing final sort/merge of size                1209 = 1.2090E+03
+Number of connected dets on this core=          656 = 6.56E+02
+Batch 10: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+ j,n_connected_dets=           1          57
+ j,n_connected_dets=         656          61
+ j,n_connected_dets=         328          57
+find_doubly_excited: allocating dets_up etc. arrays of size      3399 = 3.3990E+03
+Initially allocating (for merging) iorder etc. arrays of size      3399 = 3.3990E+03
+find_doubly_excited: Performing sort and merge of size       3396 = 3.3960E+03
+Performing final sort/merge of size                 851 = 8.5100E+02
+Number of connected dets on this core=          656 = 6.56E+02
+Batch 11: ndets_conn, dE=       656 = 6.56E+02  0.000000E+00
+END OF Deterministic 2nd-order PT correction CP, REAL TIME              0.38       0.12        0        0, Mem avail    6056.56    6027.27    6026.62
+
+PT_correction, eps_pt, ndets_connected for fully deterministic run=   -0.000001714  1.0000E-07         7220 = 7.22E+03
+
+State   1:
+Variational energy(1)=               -74.543529111
+2nd-order PT energy lowering(1)=      -0.000001714
+Total energy(1)=                     -74.543530825
+eps_var, eps_pt, ndets, ndets_connected(total), Variational, PT_actv, PT_full, Total Energies(1)= 5.0E-04 1.0E-07      363       7220   -74.543529111   -0.000001714   -0.000001714   -74.543530825
+END OF HCI CP, REAL TIME                                                0.38       0.00        0        0, Mem avail    6056.56    6027.27    6026.62
