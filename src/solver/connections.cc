@@ -387,7 +387,7 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
     const double H = abstract_system->hamiltonian(&det, &det);
     res.push_back(std::make_pair(det_id, H));
   }
-  // if (det_id >= 158954) return;
+  // if (det_id >= 57315) return;
 
   const int start_id = is_new_det ? det_id + 1 : n_dets_prev;
 
@@ -397,16 +397,16 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
   const auto& alpha_dets = beta_id_to_det_ids[beta_id];
   for (auto it = alpha_dets.begin(); it != alpha_dets.end(); it++) {
     const int alpha_det_id = *it;
-    // if (alpha_det_id >= 158954) continue;
+    // if (alpha_det_id >= 57315) continue;
     if (alpha_det_id < start_id) continue;
     connected_det.ParseFromString(abstract_system->dets[alpha_det_id]);
     const double H = abstract_system->hamiltonian(&det, &connected_det);
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-    if (det_id >= 158954 && alpha_det_id < 158954 && std::abs(abstract_system->coefs[alpha_det_id] * H) < 0.0001) continue;
-    if (det_id < 158954 && alpha_det_id >= 158954 && std::abs(coef * H) < 0.0001) continue;
-    if (det_id >= 158954 && alpha_det_id >= 158954) continue;
-    if (det_id >= 158954 && alpha_det_id >= 158954 && std::abs(coef * H) < 0.0001 && 
-         std::abs(abstract_system->coefs[alpha_det_id] * H) < 0.0001) continue;
+    if (det_id >= 57315 && alpha_det_id < 57315 && std::abs(abstract_system->coefs[alpha_det_id] * H) < 0.0002) continue;
+    if (det_id < 57315 && alpha_det_id >= 57315 && std::abs(coef * H) < 0.0002) continue;
+    //if (det_id >= 57315 && alpha_det_id >= 57315) continue;
+    if (det_id >= 57315 && alpha_det_id >= 57315 && std::abs(coef * H) < 0.0002 && 
+         std::abs(abstract_system->coefs[alpha_det_id] * H) < 0.0002) continue;
     res.push_back(std::make_pair(alpha_det_id, H));
   }
 
@@ -416,16 +416,16 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
   const auto& beta_dets = alpha_id_to_det_ids[alpha_id];
   for (auto it = beta_dets.begin(); it != beta_dets.end(); it++) {
     const int beta_det_id = *it;
-    // if (beta_det_id >= 158954) continue;
+    // if (beta_det_id >= 57315) continue;
     if (beta_det_id < start_id) continue;
     connected_det.ParseFromString(abstract_system->dets[beta_det_id]);
     const double H = abstract_system->hamiltonian(&det, &connected_det);
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-    if (det_id >= 158954 && beta_det_id < 158954 && std::abs(abstract_system->coefs[beta_det_id] * H) < 0.0001) continue;
-    if (det_id < 158954 && beta_det_id >= 158954 && std::abs(coef * H) < 0.0001) continue;
-    if (det_id >= 158954 && beta_det_id >= 158954) continue;
-    if (det_id >= 158954 && beta_det_id >= 158954 && std::abs(coef * H) < 0.0001 && 
-         std::abs(abstract_system->coefs[beta_det_id] * H) < 0.0001) continue;
+    if (det_id >= 57315 && beta_det_id < 57315 && std::abs(abstract_system->coefs[beta_det_id] * H) < 0.0002) continue;
+    if (det_id < 57315 && beta_det_id >= 57315 && std::abs(coef * H) < 0.0002) continue;
+    //if (det_id >= 57315 && beta_det_id >= 57315) continue;
+    if (det_id >= 57315 && beta_det_id >= 57315 && std::abs(coef * H) < 0.0002 && 
+         std::abs(abstract_system->coefs[beta_det_id] * H) < 0.0002) continue;
     res.push_back(std::make_pair(beta_det_id, H));
   }
 
@@ -447,16 +447,16 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
       if (related_beta_ids[ptr] == beta_single) {
         const int related_det_id = related_det_ids[ptr];
         ptr++;
-        // if (related_det_id >= 158954) continue;
+        // if (related_det_id >= 57315) continue;
         if (related_det_id < start_id) continue;
         connected_det.ParseFromString(abstract_system->dets[related_det_id]);
         const double H = abstract_system->hamiltonian(&det, &connected_det);
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
-        if (det_id >= 158954 && related_det_id < 158954 && std::abs(abstract_system->coefs[related_det_id] * H) < 0.0001) continue;
-        if (det_id < 158954 && related_det_id >= 158954 && std::abs(coef * H) < 0.0001) continue;
-        if (det_id >= 158954 && related_det_id >= 158954) continue;
-        if (det_id >= 158954 && related_det_id >= 158954 && std::abs(coef * H) < 0.0001 && 
-             std::abs(abstract_system->coefs[related_det_id] * H) < 0.0001) continue;
+        if (det_id >= 57315 && related_det_id < 57315 && std::abs(abstract_system->coefs[related_det_id] * H) < 0.0002) continue;
+        if (det_id < 57315 && related_det_id >= 57315 && std::abs(coef * H) < 0.0002) continue;
+        //if (det_id >= 57315 && related_det_id >= 57315) continue;
+        if (det_id >= 57315 && related_det_id >= 57315 && std::abs(coef * H) < 0.0002 && 
+             std::abs(abstract_system->coefs[related_det_id] * H) < 0.0002) continue;
         res.push_back(std::make_pair(related_det_id, H));
       }
     }
