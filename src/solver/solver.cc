@@ -444,6 +444,7 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
   omp_hash_map<std::string, double> partial_sums_pre;
   partial_sums_pre.set_max_load_factor(MAX_HASH_LOAD);
   std::vector<double> energy_pts_pre_dtm(n_n_orbs_pts, 0.0);
+  std::vector<double> energy_pts_4(n_n_orbs_pts, 0.0);
   std::vector<unsigned long long> n_pt_dets_pre_dtm(n_n_orbs_pts, 0);
 
   timer->start("pre_dtm");
@@ -506,11 +507,14 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
       n_pt_dets_pre_dtm[i]++;
 #pragma omp atomic
       energy_pts_pre_dtm[i] += contribution;
+#pragma omp atomic
+      energy_pts_4[i] += value * value / ((energy_var - H_aa) * (energy_var - H_aa));
     }
   });
   partial_sums_pre.clear();
   parallel->reduce_to_sum(n_pt_dets_pre_dtm);
   parallel->reduce_to_sum(energy_pts_pre_dtm);
+  parallel->reduce_to_sum(energy_pts_4);
 
   if (verbose) {
     printf(TABLE_FORMAT_ITEM_NAME, "# orbitals PT:");
@@ -521,6 +525,11 @@ std::vector<double> SolverImpl::get_energy_pts_pre_dtm(
     printf(TABLE_FORMAT_ITEM_NAME, "Pre DTM energy PT:");
     for (int i = 0; i < n_n_orbs_pts; i++) {
       printf(TABLE_FORMAT_F, energy_pts_pre_dtm[i]);
+    }
+    printf("\n");
+    printf(TABLE_FORMAT_ITEM_NAME, "Pre DTM energy PT4:");
+    for (int i = 0; i < n_n_orbs_pts; i++) {
+      printf(TABLE_FORMAT_F, energy_pts_pre_dtm[i] * energy_pts_4[i]);
     }
     printf("\n");
     printf(TABLE_FORMAT_ITEM_NAME, "EST. CORR. energy:");
