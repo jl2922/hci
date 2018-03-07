@@ -404,7 +404,7 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     if (det_id >= 57315 && alpha_det_id < 57315 && std::abs(abstract_system->coefs[alpha_det_id] * H) < 0.00002) continue;
     if (det_id < 57315 && alpha_det_id >= 57315 && std::abs(coef * H) < 0.00002) continue;
-    //if (det_id >= 57315 && alpha_det_id >= 57315) continue;
+    if (det_id >= 57315 && alpha_det_id >= 57315) continue;
     if (det_id >= 57315 && alpha_det_id >= 57315 && std::abs(coef * H) < 0.00002 && 
          std::abs(abstract_system->coefs[alpha_det_id] * H) < 0.00002) continue;
     res.push_back(std::make_pair(alpha_det_id, H));
@@ -423,7 +423,7 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
     if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
     if (det_id >= 57315 && beta_det_id < 57315 && std::abs(abstract_system->coefs[beta_det_id] * H) < 0.00002) continue;
     if (det_id < 57315 && beta_det_id >= 57315 && std::abs(coef * H) < 0.00002) continue;
-    //if (det_id >= 57315 && beta_det_id >= 57315) continue;
+    if (det_id >= 57315 && beta_det_id >= 57315) continue;
     if (det_id >= 57315 && beta_det_id >= 57315 && std::abs(coef * H) < 0.00002 && 
          std::abs(abstract_system->coefs[beta_det_id] * H) < 0.00002) continue;
     res.push_back(std::make_pair(beta_det_id, H));
@@ -454,7 +454,7 @@ void ConnectionsImpl::update_hamiltonian(const int det_id) {
         if (std::abs(H) < std::numeric_limits<double>::epsilon()) continue;
         if (det_id >= 57315 && related_det_id < 57315 && std::abs(abstract_system->coefs[related_det_id] * H) < 0.00002) continue;
         if (det_id < 57315 && related_det_id >= 57315 && std::abs(coef * H) < 0.00002) continue;
-        //if (det_id >= 57315 && related_det_id >= 57315) continue;
+        if (det_id >= 57315 && related_det_id >= 57315) continue;
         if (det_id >= 57315 && related_det_id >= 57315 && std::abs(coef * H) < 0.00002 && 
              std::abs(abstract_system->coefs[related_det_id] * H) < 0.00002) continue;
         res.push_back(std::make_pair(related_det_id, H));
